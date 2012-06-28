@@ -1,0 +1,6 @@
+[submodule "deps/gl-matrix"]
+	path = deps/gl-matrix
+	url = https://github.com/toji/gl-matrix
+[submodule "deps/game-shim"]
+	path = deps/game-shim
+	url = https://github.com/toji/game-shim
