@@ -629,7 +629,6 @@ var gltoy;
         resourceCache[name] = resources;
         var effectModule = effects[name];
         currentEffect = new effectModule.Effect(parameters, glw, resources);
-        resetStateFor(currentEffect, noop, 1);
       }
       
       if (name in resourceCache) {
@@ -651,7 +650,6 @@ var gltoy;
         if (transitionTime >= 1.0) {
           previousEffect.deleteResources();
           previousEffect = undefined;
-          resetStateFor(currentEffect, noop, 1);
         }
       }
     }
@@ -667,6 +665,8 @@ var gltoy;
       if (currentEffect) {
         if (previousEffect) {
           resetStateFor(currentEffect, transition.in, transitionTime);
+        } else {
+          resetStateFor(currentEffect, noop, 1);
         }
         currentEffect.draw();
       }
