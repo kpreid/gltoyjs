@@ -37,14 +37,24 @@
       var canvas = document.getElementById("canvas");
       var glw = new gltoy.GLWrapper(canvas);
       var effect;
-
+      
+      var resourceCache = Object.create(null);
+      
       function loadEffect(name) {
-        // TODO cache shaders
-        gltoy.fetchShaders("effects/"+name+"/", effects[name].shaders, function (resources) {
+        function finish(resources) {
+          resourceCache[name] = resources;
           effect = new effects[name].Effect(glw, resources);
-
           effect.setState();
-        });
+        }
+        
+        if (name in resourceCache) {
+          // setTimeout so this isn't sometimes-synchronous
+          setTimeout(function () {
+            finish(resourceCache[name]);
+          }, 0);
+        } else {
+          gltoy.fetchShaders("effects/"+name+"/", effects[name].shaders, finish);
+        }
       }
 
       function loop() {
@@ -56,6 +66,11 @@
 
       loop();
       loadEffect("orchard");
+      
+      setInterval(function () {
+        var names = Object.keys(effects);
+        loadEffect(names[Math.floor(Math.random() * names.length)]);
+      }, 5000);
     }
   </script>
 </head>
