@@ -275,8 +275,9 @@ var gltoy = {};
     }
     this.useProgramW = useProgramW;
     
-    function setTransition(transition, mix) {
+    function setTransition(viewDistance, transition, mix) {
       mat4.identity(viewMatrix);
+      mat4.translate(viewMatrix, [0, 0, -viewDistance]);
       transition(viewMatrix, mix);
       doModelview();
     }
@@ -445,6 +446,18 @@ var gltoy = {};
     
     var resourceCache = Object.create(null);
     
+    function interpe(name, mix) {
+      if (previousEffect) {
+        return previousEffect[name]() * (1-mix) + currentEffect[name]() * mix;
+      } else {
+        return currentEffect[name]();
+      }
+    }
+    
+    function viewDistance() {
+      return interpe("viewDistance", transitionTime);
+    }
+    
     function switchEffect(name) {
       function finish(resources) {
         if (previousEffect) previousEffect.deleteResources();
@@ -476,6 +489,7 @@ var gltoy = {};
         if (transitionTime >= 1.0) {
           previousEffect.deleteResources();
           previousEffect = undefined;
+          glw.setTransition(viewDistance(), function () {}, 1); // clear transition matrix
         }
       }
     }
@@ -485,13 +499,13 @@ var gltoy = {};
       
       glw.beginFrame();
       if (previousEffect) {
-        glw.setTransition(transition.out, transitionTime);
+        glw.setTransition(viewDistance(), transition.out, transitionTime);
         previousEffect.setState();
         previousEffect.draw();
       }
       if (currentEffect) {
         if (previousEffect) {
-          glw.setTransition(transition.in, transitionTime);
+          glw.setTransition(viewDistance(), transition.in, transitionTime);
           currentEffect.setState();
         }
         currentEffect.draw();

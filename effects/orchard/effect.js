@@ -58,4 +58,6 @@
       grid.deleteResources();
     };
   }
+  exports.Effect.prototype.viewDistance = function () { return 0; };
+  
 }());

@@ -62,4 +62,5 @@
       cone.deleteResources();
     }
   }
+  exports.Effect.prototype.viewDistance = function () { return 1; };
 }());
