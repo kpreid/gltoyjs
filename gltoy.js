@@ -30,6 +30,8 @@ var gltoy = {};
   
   var DEBUG_GL = false;
   
+  function noop () {}
+  
   function getWebGLContext(canvas, options) {
     return canvas.getContext("webgl", options) || canvas.getContext("experimental-webgl", options);
   }
@@ -466,9 +468,11 @@ var gltoy = {};
       return interpe("viewDistance", transitionTime);
     }
     
-    function resetState() {
+    function resetStateFor(effect, trf, mix) {
+      glw.setTransition(viewDistance(), trf, mix); // clear transition matrix
       gl.enable(gl.DEPTH_TEST);
       gl.disable(gl.BLEND);
+      effect.setState();
     }
     
     function switchEffect(name, parameters) {
@@ -481,8 +485,7 @@ var gltoy = {};
         resourceCache[name] = resources;
         var effectModule = effects[name];
         currentEffect = new effectModule.Effect(parameters, glw, resources);
-        resetState();
-        currentEffect.setState();
+        resetStateFor(currentEffect, noop, 1);
       }
       
       if (name in resourceCache) {
@@ -504,7 +507,7 @@ var gltoy = {};
         if (transitionTime >= 1.0) {
           previousEffect.deleteResources();
           previousEffect = undefined;
-          glw.setTransition(viewDistance(), function () {}, 1); // clear transition matrix
+          resetStateFor(currentEffect, noop, 1);
         }
       }
     }
@@ -514,16 +517,12 @@ var gltoy = {};
       
       glw.beginFrame();
       if (previousEffect) {
-        glw.setTransition(viewDistance(), transition.out, transitionTime);
-        resetState();
-        previousEffect.setState();
+        resetStateFor(previousEffect, transition.out, transitionTime);
         previousEffect.draw();
       }
       if (currentEffect) {
         if (previousEffect) {
-          glw.setTransition(viewDistance(), transition.in, transitionTime);
-          resetState();
-          currentEffect.setState();
+          resetStateFor(currentEffect, transition.in, transitionTime);
         }
         currentEffect.draw();
       }

@@ -36,7 +36,8 @@
     });
     
     // Figure needed point density
-    // TODO: This actually depends on the FOV which is vertical only
+    // TODO: This actually depends on the FOV as well
+    // TODO update when viewport / aspect ratio changes
     var viewport = gl.getParameter(gl.VIEWPORT);
     var viewportArea = viewport[2] * viewport[3];
     var pointsPerPixel = 1.5;
