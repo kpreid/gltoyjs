@@ -98,7 +98,12 @@ var gltoy = {};
     return {
       program: program,
       attribs: attribs,
-      uniforms: uniforms
+      uniforms: uniforms,
+      deleteResources: function () {
+        gl.deleteProgram(program);
+        gl.deleteShader(vertexShader);
+        gl.deleteShader(fragmentShader);
+      }
     };
   }
   

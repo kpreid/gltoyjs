@@ -42,6 +42,8 @@
       
       function loadEffect(name) {
         function finish(resources) {
+          if (effect) effect.deleteResources();
+          
           resourceCache[name] = resources;
           effect = new effects[name].Effect(glw, resources);
           effect.setState();

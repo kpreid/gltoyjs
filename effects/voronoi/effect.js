@@ -57,5 +57,10 @@
         cone.draw(gl.TRIANGLE_FAN);
       }
     };
+    
+    this.deleteResources = function () {
+      programW.deleteResources();
+      cone.deleteResources();
+    }
   }
 }());

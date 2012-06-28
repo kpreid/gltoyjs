@@ -53,5 +53,10 @@
       grid.attrib();
       grid.draw(gl.POINTS);
     };
+    
+    this.deleteResources = function () {
+      programW.deleteResources();
+      grid.deleteResources();
+    };
   }
 }());
