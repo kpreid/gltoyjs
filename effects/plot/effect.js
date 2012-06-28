@@ -18,10 +18,74 @@
   
   exports.shaders = programDesc;
   
+  function randfunc() {
+    return randElem([
+      "s * 2.0 - 1.0",
+      "s * -2.0 + 1.0",
+
+      "sin(s * PI * p * 48.0)",
+      "cos(s * PI * p * 48.0)",
+      "tan(s * PI * p * 48.0)",
+      "sec(s * PI * p * 48.0)",
+
+      "sin(t)",
+      "cos(t)",
+      "tan(t)",
+      "sec(t)",
+
+      "sin(s * PI * p * 48.0 + t)",
+      "cos(s * PI * p * 48.0 + t)",
+      "tan(s * PI * p * 48.0 + t)",
+      "sec(s * PI * p * 48.0 + t)",
+
+      "sin(1.0 / (s - 0.5) * (p * 48.0))",
+      "sin(1.0 / (s - 0.5) * (p * 48.0)) + t",
+
+      "sin(s * PI * p * 48.0) / 2.0 + sin(s * PI * 2.0)",
+      "sin(s * PI * p * 48.0 + t) / 2.0 + sin(s * PI * 2.0)",
+      "cos(s * PI * p * 48.0) / 2.0 + sin(s * PI * 2.0)",
+      "cos(s * PI * p * 48.0 + t) / 2.0 + sin(s * PI * 2.0)",
+      
+      "round(s * p * 48.0) / (p * 48.0) * 2.0 - 1.0",
+      "(round(s * p * 48.0 + t) - t) / (p * 48.0) * 2.0 - 1.0",
+      "abs(mod(s * p * 48.0, 4.0) - 2.0) - 1.0", // sawtooth
+      "abs(mod(s * p * 48.0 + t, 4.0) - 2.0) - 1.0",
+      
+      "tan(ess) + 2.0 * sin(-mod(ess + PI/2.0, PI) + PI/2.0)",
+      "tan(esst) + 2.0 * sin(-mod(esst + PI/2.0, PI) + PI/2.0)"
+    ]);
+  }
+  
+  function pickParam(previous) {
+     switch (isFinite(previous) ? randInt(5) : 0) {
+       case 0: return random();
+       case 1: return previous;
+       case 2: return previous * (2 + randInt(5));
+       case 3: return previous / (2 + randInt(5));
+       case 4: return previous * PI;
+    }
+  }
+  
   exports.configure = function () {
     var parameters = {
-      tumbler: gltoy.Tumbler.configure()
+      tumbler: gltoy.Tumbler.configure(),
+      functions: {
+        x: randfunc(),
+        y: randfunc(),
+        z: randfunc(),
+        r: randfunc(),
+        g: randfunc(),
+        b: randfunc()
+      },
+      funcParams: {}
     };
+    var p = parameters.funcParams;
+    p.x = pickParam();
+    p.y = pickParam(p.x);
+    p.z = pickParam(p.y);
+    p.r = pickParam(p.z);
+    p.g = pickParam(p.r);
+    p.b = pickParam(p.g);
     return parameters;
   };
   
@@ -29,15 +93,21 @@
     var gl = glw.context;
     var mvMatrix = mat4.create();
     
-    var numPoints = 500; //parameters.numPoints;
+    var numPoints = 10000; //parameters.numPoints;
     
     var programW = glw.compile(programDesc, resources, {
-      FX: "sin(s*30.0)",
-      FY: "cos(s*30.0)",
-      FZ: "s",
-      FR: "1.0",
-      FG: "0.0",
-      FB: "sin(t)"
+      FX: parameters.functions.x,
+      FY: parameters.functions.y,
+      FZ: parameters.functions.z,
+      FR: parameters.functions.r,
+      FG: parameters.functions.g,
+      FB: parameters.functions.b,
+      PX: parameters.funcParams.x,
+      PY: parameters.funcParams.y,
+      PZ: parameters.funcParams.z,
+      PR: parameters.funcParams.r,
+      PG: parameters.funcParams.g,
+      PB: parameters.funcParams.b
     });
     var tumbler = new gltoy.Tumbler(parameters.tumbler);
     
@@ -76,7 +146,7 @@
     }
   }
   exports.Effect.prototype.viewDistance = function () { return 20; };
-  exports.Effect.prototype.viewRadius = function () { return 3; }; // TODO this should be able to be 1; view calculation must be wrong
+  exports.Effect.prototype.viewRadius = function () { return 6; }; // TODO this should be able to be 1; view calculation must be wrong
   exports.Effect.prototype.nearClipFraction = function () { return 0.1; };
   exports.Effect.prototype.farClipDistance = function () { return 10000; };
 }());
