@@ -493,7 +493,7 @@ var gltoy;
   var tumbleModes = ["none", "rots1", "rots2", "rots3", "rots4", "rotY'", "rotX", "rotY", "rotZ"];
   Tumbler.configure = function () {
     var parameters = {
-      type: tumbleModes[randint(tumbleModes.length)]
+      type: randElem(tumbleModes)
     };
     // switch (type) {...}
     return parameters;
@@ -623,8 +623,12 @@ var gltoy;
   
   // --- Utilities for effects ---
   
-  function randint(bound) {
+  function randInt(bound) {
     return floor(random() * bound);
+  }
+  
+  function randElem(array) {
+    return array[randInt(array.length)];
   }
   
   // --- Export ---
@@ -633,7 +637,8 @@ var gltoy;
     EffectManager: EffectManager,
     fetchShaders: fetchShaders,
     GLWrapper: GLWrapper,
-    randint: randint,
+    randElem: randElem,
+    randInt: randInt,
     Tumbler: Tumbler
   });
 }());

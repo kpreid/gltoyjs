@@ -5,7 +5,16 @@
 
 (function () {
   "use strict";
-
+  
+  var cos = Math.cos;
+  var PI = Math.PI;
+  var randElem = gltoy.randElem;
+  var randInt = gltoy.randInt;
+  var random = Math.random;
+  var sin = Math.sin;
+  
+  var patternSeedsPerPoint = 4;
+  
   function u() {
     return (Math.random() + Math.random() + Math.random() - 1.5)/2;
   }
@@ -18,18 +27,38 @@
   exports.shaders = programDesc;
   
   exports.configure = function () {
-    return {};
+    var parameters = {
+      numPoints: 2 + randInt(40),
+      pattern: randElem(["scatter", "chain"]),
+    };
+    switch (parameters.pattern) {
+      case "scatter":
+        parameters.patternSeeds = [];
+        for (var i = 0; i < parameters.numPoints * patternSeedsPerPoint; i++) {
+          parameters.patternSeeds[i] = random();
+        }
+        break;
+      case "chain":
+        parameters.chainSpeedRange = random();
+        parameters.chainTwist = random();
+        break;
+    }
+    return parameters;
   };
   
-  exports.Effect = function (config, glw, resources) {
+  exports.Effect = function (parameters, glw, resources) {
     var gl = glw.context;
     var mvMatrix = mat4.create();
+    
+    var numPoints = parameters.numPoints;
+    var patternSeeds = parameters.patternSeeds;
+    var coneVertices = 50;
     
     var programW = glw.compile(programDesc, resources);
     
     var cverts = [0, 0, 0];
     for (var i = 0; i <= 50; i += 1) {
-      var j = i * 2*Math.PI / 50;
+      var j = i * 2*PI / 50;
       cverts.push(Math.sin(j), Math.cos(j), -1);
     }
     var cone = new glw.BufferAndArray([{
@@ -47,10 +76,22 @@
 
     this.draw = function () {
       var now = new Date().getTime() / 1000;
-
-      for (var i = 0; i < 10; i++) {
-        var x = Math.sin(2+i*10.2+now*1.1);
-        var y = Math.sin(i*17+now);
+      
+      for (var i = 0; i < numPoints; i++) {
+        var x = 0, y = 0;
+        var sbase = i * patternSeedsPerPoint;
+        switch (parameters.pattern) {
+          case "scatter":
+            x = sin(now * patternSeeds[sbase+0] + PI*2 * patternSeeds[sbase+1]);
+            y = cos(now * patternSeeds[sbase+2] + PI*2 * patternSeeds[sbase+3]);
+            break;
+          case "chain":
+            var theta = now * 0.5 * (1 + i/numPoints * parameters.chainSpeedRange);
+            x = sin(theta);
+            y = cos(theta * (1 + parameters.chainTwist / 10));
+        }
+        //var x = Math.sin(2+i*10.2+now*1.1);
+        //var y = Math.sin(i*17+now);
 
         mat4.identity(mvMatrix);
         mat4.translate(mvMatrix, [x, y, 0]);

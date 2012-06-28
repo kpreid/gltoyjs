@@ -4,7 +4,7 @@
 (function () {
   "use strict";
 
-  var randint = gltoy.randint;
+  var randInt = gltoy.randInt;
   var random = Math.random;
   var sqrt = Math.sqrt;
   
@@ -16,7 +16,7 @@
   exports.shaders = programDesc;
   
   exports.configure = function () {
-    var colorPermutation = randint(6);
+    var colorPermutation = randInt(6);
     var brightness = 0.06 + random() * 0.74;
     
     return {
