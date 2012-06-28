@@ -151,7 +151,12 @@ var gltoy = {};
     // View and projection transformation globals.
     var pagePixelWidth, pagePixelHeight;
     var pMatrix = mat4.create();
+    var modelMatrix = mat4.create();
+    mat4.identity(modelMatrix);
+    var viewMatrix = mat4.create();
+    mat4.identity(viewMatrix);
     var mvMatrix = mat4.create();
+    mat4.identity(mvMatrix);
     
     var contextLost = false;
     
@@ -215,6 +220,11 @@ var gltoy = {};
       gl.uniformMatrix4fv(uniforms.uPMatrix, false, pMatrix);
       gl.uniformMatrix4fv(uniforms.uMVMatrix, false, mvMatrix);
     }
+    
+    function doModelview() {
+      mat4.multiply(viewMatrix, modelMatrix, mvMatrix);
+      gl.uniformMatrix4fv(uniforms.uMVMatrix, false, mvMatrix);
+    }
 
     function handleContextLost(event) {
       contextLost = true;
@@ -269,10 +279,25 @@ var gltoy = {};
     }
     this.useProgramW = useProgramW;
     
-    function modelview(matrix) {
-      gl.uniformMatrix4fv(uniforms.uMVMatrix, false, matrix);
+    function setTransitionOut(mix) {
+      mat4.identity(viewMatrix);
+      mat4.translate(viewMatrix, [0, mix * 6, 0]);
+      doModelview();
     }
-    this.modelview = modelview;
+    this.setTransitionOut = setTransitionOut;
+    
+    function setTransitionIn(mix) {
+      mat4.identity(viewMatrix);
+      mat4.translate(viewMatrix, [0, mix * 6 - 6, 0]);
+      doModelview();
+    }
+    this.setTransitionIn = setTransitionIn;
+    
+    function setModelMatrix(matrix) {
+      mat4.set(matrix, modelMatrix);
+      doModelview();
+    }
+    this.setModelMatrix = setModelMatrix;
     
     function beginFrame() {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

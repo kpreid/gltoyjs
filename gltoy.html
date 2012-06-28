@@ -36,17 +36,22 @@
     function gltoyMain() {
       var canvas = document.getElementById("canvas");
       var glw = new gltoy.GLWrapper(canvas);
-      var effect;
+
+      var frameTime = Date.now();
+      var transition = 0;
+      var previousEffect, currentEffect;
       
       var resourceCache = Object.create(null);
       
       function loadEffect(name) {
         function finish(resources) {
-          if (effect) effect.deleteResources();
+          if (previousEffect) previousEffect.deleteResources();
+          previousEffect = currentEffect;
+          transition = 0;
           
           resourceCache[name] = resources;
-          effect = new effects[name].Effect(glw, resources);
-          effect.setState();
+          currentEffect = new effects[name].Effect(glw, resources);
+          currentEffect.setState();
         }
         
         if (name in resourceCache) {
@@ -59,9 +64,35 @@
         }
       }
 
+      function step() {
+        var newTime = Date.now();
+        var dt = (newTime - frameTime) / 1000;
+        frameTime = newTime;
+        if (previousEffect) {
+          transition += dt;
+          if (transition >= 1.0) {
+            previousEffect.deleteResources();
+            previousEffect = undefined;
+          }
+        }
+      }
+
       function loop() {
+        step();
+        
         glw.beginFrame();
-        if (effect) effect.draw();
+        if (previousEffect) {
+          glw.setTransitionOut(transition);
+          previousEffect.setState();
+          previousEffect.draw();
+        }
+        if (currentEffect) {
+          if (previousEffect) {
+            glw.setTransitionIn(transition);
+            currentEffect.setState();
+          }
+          currentEffect.draw();
+        }
         glw.endFrame();
         window.requestAnimationFrame(loop, canvas);
       }
@@ -72,7 +103,7 @@
       setInterval(function () {
         var names = Object.keys(effects);
         loadEffect(names[Math.floor(Math.random() * names.length)]);
-      }, 5000);
+      }, 2000);
     }
   </script>
 </head>

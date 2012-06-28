@@ -48,7 +48,7 @@
       mat4.rotateX(mvMatrix, Date.now() / 1000 * 0.1);
       mat4.rotateY(mvMatrix, Date.now() / 1000 * 0.3);
       mat4.scale(mvMatrix, [3, 3, 3]);
-      glw.modelview(mvMatrix);
+      glw.setModelMatrix(mvMatrix);
 
       grid.attrib();
       grid.draw(gl.POINTS);

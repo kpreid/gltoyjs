@@ -50,7 +50,7 @@
 
         mat4.identity(mvMatrix);
         mat4.translate(mvMatrix, [x, y, 0]);
-        glw.modelview(mvMatrix);
+        glw.setModelMatrix(mvMatrix);
 
         gl.uniform4f(glw.uniforms.uColor, Math.sin(i), Math.sin(i*2), Math.sin(i*3), 1);
         cone.attrib();
