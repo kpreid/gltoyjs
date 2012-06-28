@@ -1,6 +1,8 @@
 // Copyright 2011-2012 Kevin Reid under the terms of the MIT License as detailed
 // in the accompanying file README.md or <http://opensource.org/licenses/MIT>.
 
+// TODO: Add in all the features and characteristics from the original GLToy version.
+
 "use strict";
 (function () {
   function u() {
@@ -33,6 +35,7 @@
     cone.send(gl.STATIC_DRAW);
 
     this.setState = function () {
+      // mat4.ortho(-1.5, 1.5, -1.5, 1.5, 0.01, 100.0, pMatrix); // TODO
       glw.useProgramW(programW);
       gl.clearColor(0.0, 0.0, 0.0, 1.0);
       gl.enable(gl.DEPTH_TEST);

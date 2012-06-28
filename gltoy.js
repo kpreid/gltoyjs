@@ -202,11 +202,12 @@ var gltoy = {};
                        nearPlane,
                        farPlane,
                        pMatrix);
-      
-      gl.uniformMatrix4fv(uniforms.uPMatrix, false, pMatrix);
+
+      sendViewUniforms();
     }
     
     function sendViewUniforms() {
+      gl.uniformMatrix4fv(uniforms.uPMatrix, false, pMatrix);
       gl.uniformMatrix4fv(uniforms.uMVMatrix, false, mvMatrix);
     }
 
@@ -258,6 +259,8 @@ var gltoy = {};
       gl.useProgram(newP.program);
       attribs = newP.attribs;
       uniforms = newP.uniforms;
+      
+      sendViewUniforms();
     }
     this.useProgramW = useProgramW;
     
@@ -269,9 +272,9 @@ var gltoy = {};
     function beginFrame() {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-      mat4.identity(pMatrix);
-      mat4.ortho(-1.5, 1.5, -1.5, 1.5, 0.01, 100.0, pMatrix); // TODO
-      gl.uniformMatrix4fv(uniforms.uPMatrix, false, pMatrix);
+      //mat4.identity(pMatrix);
+      //mat4.ortho(-1.5, 1.5, -1.5, 1.5, 0.01, 100.0, pMatrix); // TODO
+      //gl.uniformMatrix4fv(uniforms.uPMatrix, false, pMatrix);
     }
     this.beginFrame = beginFrame;
 

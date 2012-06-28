@@ -11,7 +11,7 @@
   <script type="text/javascript">
     var exports = {};
   </script>
-  <script type="text/javascript" src="effects/voronoi/effect.js"></script>
+  <script type="text/javascript" src="effects/orchard/effect.js"></script>
   
   <style type="text/css">
     html, body, canvas {
@@ -29,7 +29,7 @@
       var canvas = document.getElementById("canvas");
       var glw = new gltoy.GLWrapper(canvas);
 
-      gltoy.fetchShaders("effects/voronoi/", exports.shaders, function (resources) {
+      gltoy.fetchShaders("effects/orchard/", exports.shaders, function (resources) {
         var effect = new exports.Effect(glw, resources);
 
         effect.setState();
