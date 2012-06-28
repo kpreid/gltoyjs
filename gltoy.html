@@ -50,20 +50,37 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .overlay select {
+      color: inherit;
+      background: none;
+      pointer-events: auto;
+    }
   </style>
   
   <script type="text/javascript">
     function gltoyMain() {
+      var storagePrefix = "gltoy.";
+
+      var stateDisplay = document.getElementById("stateDisplay");
       var canvas = document.getElementById("canvas");
+      var effectMenu = document.getElementById("effectMenu");
+      
       var toy = new gltoy.EffectManager(canvas, effects);
       var currentEffectName; // TODO should be EffectManager's problem
+      
+      Object.keys(effects).forEach(function (name) {
+        var item = document.createElement("option");
+        item.value = name;
+        item.textContent = name;
+        effectMenu.appendChild(item);
+      });
       
       function switchEffect(name) {
         currentEffectName = name;
         var parameters = effects[name].configure();
         toy.switchEffect(name, parameters);
 
-        var desc = name + " ";
+        var desc = " ";
         function prettyprint(o) {
           switch (typeof o) {
             case "object":
@@ -120,7 +137,9 @@
           }
         }
         prettyprint(parameters);
-        document.getElementById("state-display").textContent = desc;
+        stateDisplay.textContent = desc;
+        stateDisplay.insertBefore(effectMenu, stateDisplay.firstChild);
+        effectMenu.value = name;
       }
       
       function randomEffect() {
@@ -130,18 +149,39 @@
       
       // --- ---
       
+      effectMenu.addEventListener("change", function (event) {
+        setTimeout(function () { // in random case don't re-change synchronously
+          if (effectMenu.value === "") {
+            localStorage.removeItem(storagePrefix + "effect");
+            randomEffect();
+          } else {
+            localStorage.setItem(storagePrefix + "effect", effectMenu.value);
+            switchEffect(effectMenu.value);
+          }
+        }, 0);
+      });
+      
       document.addEventListener("keydown", function (event) {
         switch (String.fromCharCode(event.keyCode)) {
           case " ": randomEffect(); break;
           case "R":
             switchEffect(currentEffectName);
             break;
+          default:
+            return true;
         }
+        return false;
       }, false);
       
       // --- setup ---
       
-      randomEffect();      
+      var initName = localStorage.getItem(storagePrefix + "effect");
+      if (typeof initName === "string" && initName in effects) {
+        switchEffect(initName);
+      } else {
+        randomEffect();
+      }
+      
       setInterval(randomEffect, 1000 * 60 * 5);
     }
   </script>
@@ -150,7 +190,11 @@
   <canvas id="canvas"></canvas>
   
   <div style="top: 0; left: 0;" class="overlay">
-    <pre id="state-display"></pre>
+    <pre id="stateDisplay">
+      <select id="effectMenu">
+        <option value="">Random</option>
+      </select>
+    </pre>
   </div>
 </body>
 </html>
