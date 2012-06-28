@@ -26,6 +26,8 @@
     };
   };
   
+  var SCALE = 2;
+  
   exports.Effect = function (param, glw, resources) {
     var gl = glw.context;
     var mvMatrix = mat4.create();
@@ -53,9 +55,9 @@
     for (var x = -radius; x <= radius; x++)
     for (var y = -radius; y <= radius; y++)
     for (var z = -radius; z <= radius; z++) {
-      array[i++] = x / radius;
-      array[i++] = y / radius;
-      array[i++] = z / radius;
+      array[i++] = x / radius * SCALE;
+      array[i++] = y / radius * SCALE;
+      array[i++] = z / radius * SCALE;
     }
     var grid = new glw.BufferAndArray([{
       attrib: glw.attribs.aVertexPosition,
@@ -87,5 +89,8 @@
     };
   }
   exports.Effect.prototype.viewDistance = function () { return 0; };
+  exports.Effect.prototype.fovTangent = function () { return 1; };
+  exports.Effect.prototype.nearClipDistance = function () { return SCALE * 0.001; };
+  exports.Effect.prototype.farClipDistance = function () { return SCALE * 2; };
   
 }());

@@ -108,5 +108,8 @@
       cone.deleteResources();
     }
   }
-  exports.Effect.prototype.viewDistance = function () { return 1; };
+  exports.Effect.prototype.viewDistance = function () { return 20; };
+  exports.Effect.prototype.viewRadius = function () { return 1; };
+  exports.Effect.prototype.nearClipFraction = function () { return 0.9; };
+  exports.Effect.prototype.farClipDistance = function () { return 2; };
 }());

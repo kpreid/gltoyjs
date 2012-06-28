@@ -39,6 +39,10 @@ var gltoy;
     return Object.freeze(obj);
   }
   
+  function interp(a, b, mix) {
+    return a * (1-mix) + b * mix;
+  }
+  
   function getWebGLContext(canvas, options) {
     return canvas.getContext("webgl", options) || canvas.getContext("experimental-webgl", options);
   }
@@ -160,7 +164,7 @@ var gltoy;
   
   // --- GLWrapper ---
   
-  function GLWrapper(canvas) {
+  function GLWrapper(canvas, view) {
     var glw = this;
     var gl = null;
     
@@ -206,26 +210,6 @@ var gltoy;
       }
       
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-      updateProjection();
-    }
-    
-    function updateProjection() {
-      var fov = 60; // TODO config.fov.get();
-      var aspectRatio = gl.drawingBufferWidth / gl.drawingBufferHeight;
-      
-      var nearestApproachToCamera = 1.0;
-      var nearPlane = nearestApproachToCamera 
-                      / sqrt(1 + pow(tan(fov/180*PI/2), 2)
-                                 * (pow(aspectRatio, 2) + 1));
-      var farPlane = 500; // TODO
-      
-      mat4.perspective(fov,
-                       aspectRatio,
-                       nearPlane,
-                       farPlane,
-                       pMatrix);
-
-      sendViewUniforms();
     }
     
     function sendViewUniforms() {
@@ -291,11 +275,19 @@ var gltoy;
     }
     this.useProgramW = useProgramW;
     
-    function setTransition(viewDistance, transition, mix) {
+    function setTransition(projection, transition, mix) {
+      var distance = projection[1];
+      
+      var pargs = projection.slice(2);
+      pargs.push(pMatrix);
+      mat4[projection[0]].apply(undefined, pargs);
+      
       mat4.identity(viewMatrix);
-      mat4.translate(viewMatrix, [0, 0, -viewDistance]);
+      mat4.translate(viewMatrix, [0, 0, -distance]);
       transition(viewMatrix, mix);
+      
       doModelview();
+      sendViewUniforms(); // TODO slightly redundant
     }
     this.setTransition = setTransition;
     
@@ -533,29 +525,95 @@ var gltoy;
   // --- EffectManager ---
   
   function EffectManager(canvas, effects) {
-    var glw = new gltoy.GLWrapper(canvas);
-    var gl = glw.context;
-
     var frameTime = Date.now();
     var transition, transitionTime = 0;
     var previousEffect, currentEffect;
     
-    var resourceCache = Object.create(null);
+    var viewWarnings = Object.create(null);
     
-    function interpe(name, mix) {
-      if (previousEffect) {
-        return previousEffect[name]() * (1-mix) + currentEffect[name]() * mix;
+    function computeView(effect) {
+      function gvm(name, fallback) {
+        if (effect[name]) {
+          return effect[name]();
+        } else {
+          if (!viewWarnings[name]) {
+            viewWarnings[name] = true;
+            console.warn("Effect did not provide view parameter " + name);
+          }
+          return fallback;
+        }
+      }
+      
+      var aspect = gl.drawingBufferWidth / gl.drawingBufferHeight;
+      var distance = effect.viewDistance();
+      var clipDist = effect.farClipDistance();
+      
+      // TODO add infinity distance (ortho)
+      
+      if (distance === 0) {
+        var tangent = gvm("fovTangent", 1);
+        var nearClip = gvm("nearClipDistance", 0.1);
+        
+        return ["frustum",
+          distance,
+          -nearClip * tangent * aspect,
+           nearClip * tangent * aspect,
+          -nearClip * tangent,
+           nearClip * tangent,
+           nearClip,
+           clipDist
+        ];
       } else {
-        return currentEffect[name]();
+        var radius = gvm("viewRadius", 1);
+        var clipFrac = gvm("nearClipFraction", 0.33);
+        
+        return ["frustum",
+          distance,
+          -clipFrac * radius * aspect,
+           clipFrac * radius * aspect,
+          -clipFrac * radius,
+           clipFrac * radius,
+          distance * clipFrac,
+          distance + clipDist
+        ];
       }
     }
     
-    function viewDistance() {
-      return interpe("viewDistance", transitionTime);
+    function interpView() {
+      if (previousEffect) {
+        if (currentEffect) {
+          var pv = computeView(previousEffect);
+          var cv = computeView(currentEffect);
+          // TODO implement ortho
+          return [
+            "frustum",
+            interp(pv[1], cv[1], transitionTime),
+            interp(pv[2], cv[2], transitionTime),
+            interp(pv[3], cv[3], transitionTime),
+            interp(pv[4], cv[4], transitionTime),
+            interp(pv[5], cv[5], transitionTime),
+            interp(pv[6], cv[6], transitionTime),
+            interp(pv[7], cv[7], transitionTime)
+          ];
+        } else {
+          return computeView(previousEffect);
+        }
+      } else {
+        if (currentEffect) {
+          return computeView(currentEffect);
+        } else {
+          return ["ortho", 0, -1, 1, -1, 1, -1, 1];
+        }
+      }
     }
     
+    var glw = new gltoy.GLWrapper(canvas);
+    var gl = glw.context;
+
+    var resourceCache = Object.create(null);
+    
     function resetStateFor(effect, trf, mix) {
-      glw.setTransition(viewDistance(), trf, mix); // clear transition matrix
+      glw.setTransition(interpView(), trf, mix); // clear transition matrix
       gl.enable(gl.DEPTH_TEST);
       gl.disable(gl.BLEND);
       effect.setState();
