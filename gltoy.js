@@ -14,7 +14,7 @@ GL/shader state management policies
 TODO write this up
 */
 
-var gltoy = {};
+var gltoy;
 
 (function () {
   "use strict";
@@ -30,7 +30,14 @@ var gltoy = {};
   
   var DEBUG_GL = false;
   
+  var TWOPI = 2*PI;
+  
   function noop () {}
+  
+  // TODO stub
+  function def(obj) {
+    return Object.freeze(obj);
+  }
   
   function getWebGLContext(canvas, options) {
     return canvas.getContext("webgl", options) || canvas.getContext("experimental-webgl", options);
@@ -382,7 +389,7 @@ var gltoy = {};
   };
   GLWrapper.NoWebGLError.prototype = Object.create(Error.prototype);
   
-  gltoy.fetchShaders = function (directory, desc, callback) {
+  function fetchShaders(directory, desc, callback) {
     var table = Object.create(null);
     function put(name) {
       table[name] = undefined;
@@ -411,12 +418,91 @@ var gltoy = {};
         }
       }
     }
+  }
+  
+  // --- Tumbler ---
+  
+  function Tumbler(parameters) {
+    var f;
+    switch (parameters.type) {
+      case "rots1":
+        f = function (matrix, rtime) {
+          var time = rtime / 360 * TWOPI;
+          mat4.rotateX(matrix, time * 3);
+          mat4.rotateY(matrix, time * 4);
+          mat4.rotateZ(matrix, time * 5);
+          mat4.rotateX(matrix, time * 10);
+          mat4.rotateY(matrix, time * 17);
+          mat4.rotateZ(matrix, time * 19);
+        };
+        break;
+      case "rots2":
+        f = function (matrix, rtime) {
+          var time = rtime / 360 * TWOPI;
+          mat4.rotateX(matrix, time * 1.0);
+          mat4.rotateY(matrix, time * 1.7);
+          mat4.rotateZ(matrix, time * 1.9);
+        };
+        break;
+      case "rots3":
+        f = function (matrix, rtime) {
+          var time = rtime / 360 * TWOPI;
+          mat4.rotateX(matrix, time * 10);
+          mat4.rotateY(matrix, time * 17);
+          mat4.rotateZ(matrix, time * 19);
+        };
+        break;
+      case "rots4":
+        f = function (matrix, rtime) {
+          var time = rtime / 360 * TWOPI;
+          mat4.rotateY(matrix, time * 30);
+          mat4.rotateX(matrix, time * 10);
+          mat4.rotateY(matrix, time * 17);
+          mat4.rotateZ(matrix, time * 19);
+        };
+        break;
+      case "rotY'":
+        f = function (matrix, rtime) {
+          var time = rtime / 360 * TWOPI;
+          mat4.rotateY(matrix, time * 10);
+          mat4.rotateX(matrix, -0.194 * TWOPI);
+        };
+        break;
+      case "rotX":
+        f = function (matrix, time) {
+          mat4.rotateX(matrix, time * 0.174);
+        };
+        break;
+      case "rotY":
+        f = function (matrix, time) {
+          mat4.rotateY(matrix, time * 0.174);
+        };
+        break;
+      case "rotZ":
+        f = function (matrix, time) {
+          mat4.rotateZ(matrix, time * 0.174);
+        };
+        break;
+      // TODO add the "axis" and "params" modes from GLToy
+      case "none": default:
+        f = noop;
+        break;
+    }
+    this.apply = f;
+  }
+  var tumbleModes = ["none", "rots1", "rots2", "rots3", "rots4", "rotY'", "rotX", "rotY", "rotZ"];
+  Tumbler.configure = function () {
+    var parameters = {
+      type: tumbleModes[randint(tumbleModes.length)]
+    };
+    // switch (type) {...}
+    return parameters;
   };
   
   // --- Transitions ---
   
   function BaseTransition(inner) {
-    var angle = random() * 2 * PI;
+    var angle = random() * TWOPI;
     this.out = function (matrix, mix) {
       mat4.rotate(matrix,  angle, [0, 0, 1]);
       inner.out(matrix, mix);
@@ -542,8 +628,12 @@ var gltoy = {};
   }
   
   // --- Export ---
-  
-  gltoy.randint = Object.freeze(randint);
-  gltoy.GLWrapper = Object.freeze(GLWrapper);
-  gltoy.EffectManager = Object.freeze(EffectManager);
+
+  gltoy = def({
+    EffectManager: EffectManager,
+    fetchShaders: fetchShaders,
+    GLWrapper: GLWrapper,
+    randint: randint,
+    Tumbler: Tumbler
+  });
 }());

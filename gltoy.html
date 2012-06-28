@@ -56,15 +56,33 @@
         var parameters = effects[name].configure();
         toy.switchEffect(name, parameters);
 
-        var desc = name + " {";
-        var keys = Object.keys(parameters);
-        if (keys.length > 0) {
-          desc += "\n";
-          keys.forEach(function (key) {
-            desc += "  " + key + ": " + parameters[key] + "\n";
-          });
+        var desc = name + " ";
+        function prettyprint(o) {
+          switch (typeof o) {
+            case "object":
+              desc += "{";
+              var keys = Object.keys(o);
+              if (keys.length === 1) {
+                var key = keys[0];
+                desc += " " + key + ": ";
+                prettyprint(o[key]);
+                desc += " ";
+              } else if (keys.length > 0) {
+                desc += "\n";
+                keys.forEach(function (key) {
+                  desc += "  " + key + ": ";
+                  prettyprint(o[key]);
+                  desc += "\n";
+                });
+              }
+              desc += "}";
+              break;
+            default:
+              desc += String(o);
+              break;
+          }
         }
-        desc += "}";
+        prettyprint(parameters);
         document.getElementById("state-display").textContent = desc;
       }
       

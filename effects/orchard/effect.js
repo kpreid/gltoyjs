@@ -22,18 +22,20 @@
     var brightness = 0.06 + random() * 0.74;
     
     return {
+      tumbler: gltoy.Tumbler.configure(),
       colorPermutation: colorPermutation,
       brightness: brightness
     };
   };
   
-  exports.Effect = function (config, glw, resources) {
+  exports.Effect = function (param, glw, resources) {
     var gl = glw.context;
     var mvMatrix = mat4.create();
     var programW = glw.compile(programDesc, resources, {
-      PERMUTATION: config.colorPermutation || 0,
-      BRIGHTNESS: config.brightness
+      PERMUTATION: param.colorPermutation || 0,
+      BRIGHTNESS: param.brightness
     });
+    var tumbler = new gltoy.Tumbler(param.tumbler);
     
     // Figure needed point density
     // TODO: This actually depends on the FOV as well
@@ -73,8 +75,7 @@
 
     this.draw = function () {
       mat4.identity(mvMatrix);
-      mat4.rotateX(mvMatrix, Date.now() / 1000 * 0.1);
-      mat4.rotateY(mvMatrix, Date.now() / 1000 * 0.3);
+      tumbler.apply(mvMatrix, Date.now() / 1000);
       mat4.scale(mvMatrix, [3, 3, 3]);
       glw.setModelMatrix(mvMatrix);
 
