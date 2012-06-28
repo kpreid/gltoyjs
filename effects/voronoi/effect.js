@@ -37,7 +37,6 @@
     this.setState = function () {
       // mat4.ortho(-1.5, 1.5, -1.5, 1.5, 0.01, 100.0, pMatrix); // TODO
       glw.useProgramW(programW);
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
       gl.enable(gl.DEPTH_TEST);
     };
 

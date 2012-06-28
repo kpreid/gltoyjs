@@ -162,17 +162,13 @@ var gltoy = {};
     
     // Shader programs, and attrib and uniform locations
     var programSetup = null;
-    var attribs, uniforms;
+    var attribs = {};
+    var uniforms = {};
     
     // --- Internals ---
     
-    function buildProgram() {
-      attribs = {};
-      uniforms = {};
-    }
-    
     function initContext() {
-      buildProgram();
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
       sendViewUniforms();
     }
     
@@ -231,7 +227,7 @@ var gltoy = {};
     }
     
     function handleContextRestored() {
-      // TODO call back to reinit everything
+      // TODO call back to reinit everything (rebuild the effect)
       contextLost = false;
       initContext();
       scheduleDraw();
