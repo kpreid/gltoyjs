@@ -471,7 +471,7 @@ var gltoy = {};
       gl.disable(gl.BLEND);
     }
     
-    function switchEffect(name) {
+    function switchEffect(name, parameters) {
       function finish(resources) {
         if (previousEffect) previousEffect.deleteResources();
         previousEffect = currentEffect;
@@ -480,7 +480,7 @@ var gltoy = {};
         
         resourceCache[name] = resources;
         var effectModule = effects[name];
-        currentEffect = new effectModule.Effect(effectModule.configure(), glw, resources);
+        currentEffect = new effectModule.Effect(parameters, glw, resources);
         resetState();
         currentEffect.setState();
       }
