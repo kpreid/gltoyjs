@@ -275,19 +275,12 @@ var gltoy = {};
     }
     this.useProgramW = useProgramW;
     
-    function setTransitionOut(mix) {
+    function setTransition(transition, mix) {
       mat4.identity(viewMatrix);
-      mat4.translate(viewMatrix, [0, mix * 6, 0]);
+      transition(viewMatrix, mix);
       doModelview();
     }
-    this.setTransitionOut = setTransitionOut;
-    
-    function setTransitionIn(mix) {
-      mat4.identity(viewMatrix);
-      mat4.translate(viewMatrix, [0, mix * 6 - 6, 0]);
-      doModelview();
-    }
-    this.setTransitionIn = setTransitionIn;
+    this.setTransition = setTransition;
     
     function setModelMatrix(matrix) {
       mat4.set(matrix, modelMatrix);
@@ -410,13 +403,44 @@ var gltoy = {};
     }
   };
   
+  // --- Transitions ---
+  
+  function BaseTransition(inner) {
+    var angle = Math.random() * 2 * Math.PI;
+    this.out = function (matrix, mix) {
+      mat4.rotate(matrix,  angle, [0, 0, 1]);
+      inner.out(matrix, mix);
+      mat4.rotate(matrix, -angle, [0, 0, 1]);
+    };
+    this.in = function (matrix, mix) {
+      mat4.rotate(matrix,  angle, [0, 0, 1]);
+      inner.in(matrix, mix);
+      mat4.rotate(matrix, -angle, [0, 0, 1]);
+    };
+  }
+  
+  function SlideTransition() {
+    return new BaseTransition({
+      out: function (matrix, mix) {
+        mat4.translate(matrix, [0, mix * 6, 0]);
+      },
+      in: function (matrix, mix) {
+        mat4.translate(matrix, [0, mix * 6 - 6, 0]);
+      }
+    })
+  }
+  
+  var transitions = [
+    SlideTransition
+  ];
+  
   // --- EffectManager ---
   
   function EffectManager(canvas, effects) {
     var glw = new gltoy.GLWrapper(canvas);
 
     var frameTime = Date.now();
-    var transition = 0;
+    var transition, transitionTime = 0;
     var previousEffect, currentEffect;
     
     var resourceCache = Object.create(null);
@@ -425,7 +449,8 @@ var gltoy = {};
       function finish(resources) {
         if (previousEffect) previousEffect.deleteResources();
         previousEffect = currentEffect;
-        transition = 0;
+        transition = new SlideTransition();
+        transitionTime = 0;
         
         resourceCache[name] = resources;
         currentEffect = new effects[name].Effect(glw, resources);
@@ -447,8 +472,8 @@ var gltoy = {};
       var dt = (newTime - frameTime) / 1000;
       frameTime = newTime;
       if (previousEffect) {
-        transition += dt;
-        if (transition >= 1.0) {
+        transitionTime += dt;
+        if (transitionTime >= 1.0) {
           previousEffect.deleteResources();
           previousEffect = undefined;
         }
@@ -460,13 +485,13 @@ var gltoy = {};
       
       glw.beginFrame();
       if (previousEffect) {
-        glw.setTransitionOut(transition);
+        glw.setTransition(transition.out, transitionTime);
         previousEffect.setState();
         previousEffect.draw();
       }
       if (currentEffect) {
         if (previousEffect) {
-          glw.setTransitionIn(transition);
+          glw.setTransition(transition.in, transitionTime);
           currentEffect.setState();
         }
         currentEffect.draw();
