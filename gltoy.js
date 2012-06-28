@@ -139,7 +139,7 @@ var gltoy = {};
   
   // --- Main definition ---
   
-  function GLWrapper(canvas, shadersSetup, shadersData) {
+  function GLWrapper(canvas) {
     var glw = this;
     var gl = null;
     
@@ -159,18 +159,6 @@ var gltoy = {};
     function buildProgram() {
       attribs = {};
       uniforms = {};
-      
-      programSetup = prepareProgram(gl, {}, {},
-        shadersSetup.vertex.map(function (name) { return shadersData[name]; }),
-        shadersSetup.fragment.map(function (name) { return shadersData[name]; }));
-
-      switchProgram(programSetup);
-    }
-    
-    function switchProgram(newP) {
-      gl.useProgram(newP.program);
-      attribs = newP.attribs;
-      uniforms = newP.uniforms;
     }
     
     function initContext() {
@@ -257,6 +245,21 @@ var gltoy = {};
     }, false);
     
     // --- Public components ---
+    
+    function compile(programDesc, resources) {
+      var programW = prepareProgram(gl, {}, {},
+        programDesc.vertex.map(function (name) { return resources[name]; }),
+        programDesc.fragment.map(function (name) { return resources[name]; }));
+      return programW;
+    }
+    this.compile = compile;
+    
+    function useProgramW(newP) {
+      gl.useProgram(newP.program);
+      attribs = newP.attribs;
+      uniforms = newP.uniforms;
+    }
+    this.useProgramW = useProgramW;
     
     function modelview(matrix) {
       gl.uniformMatrix4fv(uniforms.uMVMatrix, false, matrix);

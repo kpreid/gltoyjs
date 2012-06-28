@@ -27,10 +27,10 @@
   <script type="text/javascript">
     function gltoyMain() {
       var canvas = document.getElementById("canvas");
-      gltoy.fetchShaders("effects/voronoi/", exports.shaders, function (shaders) {
-        var glw = new gltoy.GLWrapper(canvas, exports.shaders, shaders);
+      var glw = new gltoy.GLWrapper(canvas);
 
-        var effect = new exports.Effect(glw);
+      gltoy.fetchShaders("effects/voronoi/", exports.shaders, function (resources) {
+        var effect = new exports.Effect(glw, resources);
 
         effect.setState();
         function loop() {

@@ -7,14 +7,18 @@
     return (Math.random() + Math.random() + Math.random() - 1.5)/2;
   }
   
-  exports.shaders = {
+  var programDesc = {
     vertex: ["vertex.glsl"],
     fragment: ["fragment.glsl"]
   };
-
-  exports.Effect = function (glw) {
+  
+  exports.shaders = programDesc;
+  
+  exports.Effect = function (glw, resources) {
     var gl = glw.context;
     var mvMatrix = mat4.create();
+    
+    var programW = glw.compile(programDesc, resources);
     
     var cverts = [0, 0, 0];
     for (var i = 0; i <= 50; i += 1) {
@@ -29,6 +33,7 @@
     cone.send(gl.STATIC_DRAW);
 
     this.setState = function () {
+      glw.useProgramW(programW);
       gl.clearColor(0.0, 0.0, 0.0, 1.0);
       gl.enable(gl.DEPTH_TEST);
     };
