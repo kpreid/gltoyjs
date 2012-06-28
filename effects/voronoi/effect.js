@@ -14,7 +14,8 @@
 
   exports.Effect = function (glw) {
     var gl = glw.context;
-
+    var mvMatrix = mat4.create();
+    
     var cverts = [0, 0, 0];
     for (var i = 0; i <= 50; i += 1) {
       var j = i * 2*Math.PI / 50;

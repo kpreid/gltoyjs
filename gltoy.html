@@ -25,15 +25,10 @@
   </style>
   
   <script type="text/javascript">
-    var gl, glw;
-    
-    var mvMatrix = mat4.create();
-    
     function gltoyMain() {
       var canvas = document.getElementById("canvas");
       gltoy.fetchShaders("effects/voronoi/", exports.shaders, function (shaders) {
-        glw = new gltoy.GLWrapper(canvas, exports.shaders, shaders);
-        gl = glw.context;
+        var glw = new gltoy.GLWrapper(canvas, exports.shaders, shaders);
 
         var effect = new exports.Effect(glw);
 
