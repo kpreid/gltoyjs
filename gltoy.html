@@ -35,74 +35,12 @@
   <script type="text/javascript">
     function gltoyMain() {
       var canvas = document.getElementById("canvas");
-      var glw = new gltoy.GLWrapper(canvas);
+      var toy = new gltoy.EffectManager(canvas, effects);
+      toy.switchEffect("orchard");
 
-      var frameTime = Date.now();
-      var transition = 0;
-      var previousEffect, currentEffect;
-      
-      var resourceCache = Object.create(null);
-      
-      function loadEffect(name) {
-        function finish(resources) {
-          if (previousEffect) previousEffect.deleteResources();
-          previousEffect = currentEffect;
-          transition = 0;
-          
-          resourceCache[name] = resources;
-          currentEffect = new effects[name].Effect(glw, resources);
-          currentEffect.setState();
-        }
-        
-        if (name in resourceCache) {
-          // setTimeout so this isn't sometimes-synchronous
-          setTimeout(function () {
-            finish(resourceCache[name]);
-          }, 0);
-        } else {
-          gltoy.fetchShaders("effects/"+name+"/", effects[name].shaders, finish);
-        }
-      }
-
-      function step() {
-        var newTime = Date.now();
-        var dt = (newTime - frameTime) / 1000;
-        frameTime = newTime;
-        if (previousEffect) {
-          transition += dt;
-          if (transition >= 1.0) {
-            previousEffect.deleteResources();
-            previousEffect = undefined;
-          }
-        }
-      }
-
-      function loop() {
-        step();
-        
-        glw.beginFrame();
-        if (previousEffect) {
-          glw.setTransitionOut(transition);
-          previousEffect.setState();
-          previousEffect.draw();
-        }
-        if (currentEffect) {
-          if (previousEffect) {
-            glw.setTransitionIn(transition);
-            currentEffect.setState();
-          }
-          currentEffect.draw();
-        }
-        glw.endFrame();
-        window.requestAnimationFrame(loop, canvas);
-      }
-
-      loop();
-      loadEffect("orchard");
-      
       setInterval(function () {
         var names = Object.keys(effects);
-        loadEffect(names[Math.floor(Math.random() * names.length)]);
+        toy.switchEffect(names[Math.floor(Math.random() * names.length)]);
       }, 2000);
     }
   </script>

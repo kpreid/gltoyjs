@@ -142,7 +142,7 @@ var gltoy = {};
     }
   }
   
-  // --- Main definition ---
+  // --- GLWrapper ---
   
   function GLWrapper(canvas) {
     var glw = this;
@@ -410,5 +410,76 @@ var gltoy = {};
     }
   };
   
+  // --- EffectManager ---
+  
+  function EffectManager(canvas, effects) {
+    var glw = new gltoy.GLWrapper(canvas);
+
+    var frameTime = Date.now();
+    var transition = 0;
+    var previousEffect, currentEffect;
+    
+    var resourceCache = Object.create(null);
+    
+    function switchEffect(name) {
+      function finish(resources) {
+        if (previousEffect) previousEffect.deleteResources();
+        previousEffect = currentEffect;
+        transition = 0;
+        
+        resourceCache[name] = resources;
+        currentEffect = new effects[name].Effect(glw, resources);
+        currentEffect.setState();
+      }
+      
+      if (name in resourceCache) {
+        // setTimeout so this isn't sometimes-synchronous
+        setTimeout(function () {
+          finish(resourceCache[name]);
+        }, 0);
+      } else {
+        gltoy.fetchShaders("effects/"+name+"/", effects[name].shaders, finish);
+      }
+    }
+    
+    function step() {
+      var newTime = Date.now();
+      var dt = (newTime - frameTime) / 1000;
+      frameTime = newTime;
+      if (previousEffect) {
+        transition += dt;
+        if (transition >= 1.0) {
+          previousEffect.deleteResources();
+          previousEffect = undefined;
+        }
+      }
+    }
+    
+    function loop() {
+      step();
+      
+      glw.beginFrame();
+      if (previousEffect) {
+        glw.setTransitionOut(transition);
+        previousEffect.setState();
+        previousEffect.draw();
+      }
+      if (currentEffect) {
+        if (previousEffect) {
+          glw.setTransitionIn(transition);
+          currentEffect.setState();
+        }
+        currentEffect.draw();
+      }
+      glw.endFrame();
+      window.requestAnimationFrame(loop, canvas);
+    }
+    
+    loop();
+    
+    this.switchEffect = switchEffect;
+  }
+
   gltoy.GLWrapper = Object.freeze(GLWrapper);
+  gltoy.EffectManager = Object.freeze(EffectManager);
 }());
