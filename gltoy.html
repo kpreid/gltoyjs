@@ -10,8 +10,16 @@
 
   <script type="text/javascript">
     var exports = {};
+    var effects = Object.create(null);
+    function store(name) {
+      effects[name] = exports;
+      exports = {};
+    }
   </script>
   <script type="text/javascript" src="effects/orchard/effect.js"></script>
+  <script type="text/javascript">store("orchard")</script>
+  <script type="text/javascript" src="effects/voronoi/effect.js"></script>
+  <script type="text/javascript">store("voronoi")</script>
   
   <style type="text/css">
     html, body, canvas {
@@ -28,19 +36,26 @@
     function gltoyMain() {
       var canvas = document.getElementById("canvas");
       var glw = new gltoy.GLWrapper(canvas);
+      var effect;
 
-      gltoy.fetchShaders("effects/orchard/", exports.shaders, function (resources) {
-        var effect = new exports.Effect(glw, resources);
+      function loadEffect(name) {
+        // TODO cache shaders
+        gltoy.fetchShaders("effects/"+name+"/", effects[name].shaders, function (resources) {
+          effect = new effects[name].Effect(glw, resources);
 
-        effect.setState();
-        function loop() {
-          glw.beginFrame();
-          effect.draw();
-          glw.endFrame();
-          window.requestAnimationFrame(loop, canvas);
-        }
-        loop();
-      });
+          effect.setState();
+        });
+      }
+
+      function loop() {
+        glw.beginFrame();
+        if (effect) effect.draw();
+        glw.endFrame();
+        window.requestAnimationFrame(loop, canvas);
+      }
+
+      loop();
+      loadEffect("orchard");
     }
   </script>
 </head>
