@@ -19,6 +19,13 @@ var gltoy = {};
 (function () {
   "use strict";
   
+  var floor = Math.floor;
+  var PI = Math.PI;
+  var pow = Math.pow;
+  var random = Math.random;
+  var sqrt = Math.sqrt;
+  var tan = Math.tan;
+  
   // --- Constants and utilities ---
   
   var DEBUG_GL = false;
@@ -199,8 +206,8 @@ var gltoy = {};
       
       var nearestApproachToCamera = 1.0;
       var nearPlane = nearestApproachToCamera 
-                      / Math.sqrt(1 + Math.pow(Math.tan(fov/180*Math.PI/2), 2)
-                                      * (Math.pow(aspectRatio, 2) + 1));
+                      / sqrt(1 + pow(tan(fov/180*PI/2), 2)
+                                 * (pow(aspectRatio, 2) + 1));
       var farPlane = 500; // TODO
       
       mat4.perspective(fov,
@@ -258,8 +265,8 @@ var gltoy = {};
     
     // --- Public components ---
     
-    function compile(programDesc, resources) {
-      var programW = prepareProgram(gl, {}, {},
+    function compile(programDesc, resources, declarations) {
+      var programW = prepareProgram(gl, declarations || {}, {},
         programDesc.vertex.map(function (name) { return resources[name]; }),
         programDesc.fragment.map(function (name) { return resources[name]; }));
       return programW;
@@ -407,7 +414,7 @@ var gltoy = {};
   // --- Transitions ---
   
   function BaseTransition(inner) {
-    var angle = Math.random() * 2 * Math.PI;
+    var angle = random() * 2 * PI;
     this.out = function (matrix, mix) {
       mat4.rotate(matrix,  angle, [0, 0, 1]);
       inner.out(matrix, mix);
@@ -439,6 +446,7 @@ var gltoy = {};
   
   function EffectManager(canvas, effects) {
     var glw = new gltoy.GLWrapper(canvas);
+    var gl = glw.context;
 
     var frameTime = Date.now();
     var transition, transitionTime = 0;
@@ -458,6 +466,11 @@ var gltoy = {};
       return interpe("viewDistance", transitionTime);
     }
     
+    function resetState() {
+      gl.enable(gl.DEPTH_TEST);
+      gl.disable(gl.BLEND);
+    }
+    
     function switchEffect(name) {
       function finish(resources) {
         if (previousEffect) previousEffect.deleteResources();
@@ -466,7 +479,9 @@ var gltoy = {};
         transitionTime = 0;
         
         resourceCache[name] = resources;
-        currentEffect = new effects[name].Effect(glw, resources);
+        var effectModule = effects[name];
+        currentEffect = new effectModule.Effect(effectModule.configure(), glw, resources);
+        resetState();
         currentEffect.setState();
       }
       
@@ -500,12 +515,14 @@ var gltoy = {};
       glw.beginFrame();
       if (previousEffect) {
         glw.setTransition(viewDistance(), transition.out, transitionTime);
+        resetState();
         previousEffect.setState();
         previousEffect.draw();
       }
       if (currentEffect) {
         if (previousEffect) {
           glw.setTransition(viewDistance(), transition.in, transitionTime);
+          resetState();
           currentEffect.setState();
         }
         currentEffect.draw();
@@ -518,7 +535,16 @@ var gltoy = {};
     
     this.switchEffect = switchEffect;
   }
-
+  
+  // --- Utilities for effects ---
+  
+  function randint(bound) {
+    return floor(random() * bound);
+  }
+  
+  // --- Export ---
+  
+  gltoy.randint = Object.freeze(randint);
   gltoy.GLWrapper = Object.freeze(GLWrapper);
   gltoy.EffectManager = Object.freeze(EffectManager);
 }());

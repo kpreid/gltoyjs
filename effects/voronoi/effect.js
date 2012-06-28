@@ -3,8 +3,9 @@
 
 // TODO: Add in all the features and characteristics from the original GLToy version.
 
-"use strict";
 (function () {
+  "use strict";
+
   function u() {
     return (Math.random() + Math.random() + Math.random() - 1.5)/2;
   }
@@ -16,7 +17,11 @@
   
   exports.shaders = programDesc;
   
-  exports.Effect = function (glw, resources) {
+  exports.configure = function () {
+    return {};
+  };
+  
+  exports.Effect = function (config, glw, resources) {
     var gl = glw.context;
     var mvMatrix = mat4.create();
     
