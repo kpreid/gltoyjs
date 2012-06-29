@@ -10,6 +10,7 @@
   var atan = Math.atan;
   var cos = Math.cos;
   var PI = Math.PI;
+  var pow = Math.pow;
   var randBool = gltoy.randBool;
   var randElem = gltoy.randElem;
   var randInt = gltoy.randInt;
@@ -32,12 +33,14 @@
   
   exports.configure = function () {
     var parameters = {
+      timeOrigin: pow(10, randInt(5)),
       numPoints: 2 + randInt(40),
       metric: randElem(["manhattan", "euclidean", "euclidean", "euclidean"]),
       pattern: randElem(["scatter", "chain"]),
       coloring: randElem(["fixed", "gradient1", "gradient2", "uniform", "varying"]),
       lighting: randBool()
     };
+    if (parameters.timeOrigin === 1) parameters.timeOrigin = 0;
     if (parameters.coloring === "uniform") parameters.lighting = true;
     switch (parameters.pattern) {
       case "scatter":
@@ -77,6 +80,7 @@
     var patternSeeds = parameters.patternSeeds;
     var coloring = parameters.coloring;
     var colors = parameters.colors;
+    var timeOrigin = parameters.timeOrigin;
     
     var coneVertices = parameters.metric === "manhattan" ? 4 : 100;
     var coneRadius = (parameters.metric === "manhattan"
@@ -122,7 +126,7 @@
     };
 
     this.draw = function (frame) {
-      var now = frame.t;
+      var now = frame.t + timeOrigin;
       
       for (var i = 0; i < numPoints; i++) {
         var x = 0, y = 0;
