@@ -13,6 +13,7 @@
   var random = Math.random;
   var sin = Math.sin;
   
+  var TWOPI = PI * 2;
   var patternSeedsPerPoint = 4;
   
   var programDesc = {
@@ -27,6 +28,7 @@
       numPoints: 2 + randInt(40),
       metric: randElem(["manhattan", "euclidean"]),
       pattern: randElem(["scatter", "chain"]),
+      coloring: randElem(["fixed", "gradient1", "gradient2", "uniform", "varying"])
     };
     switch (parameters.pattern) {
       case "scatter":
@@ -40,6 +42,21 @@
         parameters.chainTwist = random();
         break;
     }
+    var ncolor;
+    switch (parameters.coloring) {
+      case "fixed": ncolor = parameters.numPoints * 3; break;
+      case "gradient1": ncolor = 1; break;
+      case "gradient2": ncolor = 1; break;
+      case "uniform": ncolor = 3; break;
+      case "varying": ncolor = 3; break;
+      default: ncolor = 0; break;
+    }
+    if (ncolor > 0) {
+      parameters.colors = [];
+      for (var i = 0; i < ncolor; i++) {
+        parameters.colors[i] = random();
+      }
+    }
     return parameters;
   };
   
@@ -49,6 +66,8 @@
     
     var numPoints = parameters.numPoints;
     var patternSeeds = parameters.patternSeeds;
+    var coloring = parameters.coloring;
+    var colors = parameters.colors;
     var coneVertices = parameters.metric === "manhattan" ? 4 : 50;
     var coneRadius = 3; // TODO should depend on aspect ratio
     
@@ -56,7 +75,7 @@
     
     var cverts = [0, 0, 0];
     for (var i = 0; i <= coneVertices; i += 1) {
-      var j = i * 2*PI / coneVertices;
+      var j = i * TWOPI / coneVertices;
       cverts.push(coneRadius * Math.sin(j), coneRadius * Math.cos(j), -1);
     }
     var cone = new glw.BufferAndArray([{
@@ -80,22 +99,41 @@
         var sbase = i * patternSeedsPerPoint;
         switch (parameters.pattern) {
           case "scatter":
-            x = sin(now * patternSeeds[sbase+0] + PI*2 * patternSeeds[sbase+1]);
-            y = cos(now * patternSeeds[sbase+2] + PI*2 * patternSeeds[sbase+3]);
+            x = sin(now * patternSeeds[sbase+0] + TWOPI * patternSeeds[sbase+1]);
+            y = cos(now * patternSeeds[sbase+2] + TWOPI * patternSeeds[sbase+3]);
             break;
           case "chain":
             var theta = now * 0.5 * (1 + i/numPoints * parameters.chainSpeedRange);
             x = sin(theta);
             y = cos(theta * (1 + parameters.chainTwist / 10));
         }
-        //var x = Math.sin(2+i*10.2+now*1.1);
-        //var y = Math.sin(i*17+now);
-
+        
         mat4.identity(mvMatrix);
         mat4.translate(mvMatrix, [x, y, 0]);
         glw.setModelMatrix(mvMatrix);
-
-        gl.uniform4f(glw.uniforms.uColor, Math.sin(i), Math.sin(i*2), Math.sin(i*3), 1);
+        
+        switch (coloring) {
+          case "fixed":
+            gl.uniform3f(glw.uniforms.uColor, colors[i*3+0], colors[i*3+1], colors[i*3+2]);
+            break;
+          case "gradient1":
+            gl.uniform3f(glw.uniforms.uColor, colors[0], i/numPoints, 0);
+            break;
+          case "gradient2":
+            gl.uniform3f(glw.uniforms.uColor, 0, colors[0], i/numPoints);
+            break;
+          case "uniform":
+            gl.uniform3f(glw.uniforms.uColor, colors[0], colors[1], colors[2]);
+            break;
+          case "varying":
+            gl.uniform3f(glw.uniforms.uColor,
+              sin(now * colors[0] + i/numPoints*PI) * 0.5 + 0.5,
+              sin(now * colors[1] + i/numPoints*PI) * 0.5 + 0.5,
+              sin(now * colors[2] + i/numPoints*PI) * 0.5 + 0.5
+            );
+            break;
+        }
+        
         cone.attrib();
         cone.draw(gl.TRIANGLE_FAN);
       }
