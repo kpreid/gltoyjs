@@ -54,22 +54,28 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .overlay select, .overlay button, .overlay input {
+      pointer-events: auto;
+      vertical-align: middle;
+    }
     .overlay select {
       color: inherit;
       background: none;
-      pointer-events: auto;
     }
   </style>
   
   <script type="text/javascript">
+    var toy;
     function gltoyMain() {
+      "use strict";
+      
       var storagePrefix = "gltoy.";
 
       var stateDisplay = document.getElementById("stateDisplay");
       var canvas = document.getElementById("canvas");
       var effectMenu = document.getElementById("effectMenu");
       
-      var toy = new gltoy.EffectManager(canvas, effects);
+      toy = new gltoy.EffectManager(canvas, effects);
       var currentEffectName; // TODO should be EffectManager's problem
       
       Object.keys(effects).forEach(function (name) {
@@ -180,6 +186,10 @@
         return false;
       }, false);
       
+      document.getElementById("timerate").addEventListener("change", function (event) {
+        toy.timeRate = event.target.value;
+      })
+      
       // --- setup ---
       
       var initName = localStorage.getItem(storagePrefix + "effect");
@@ -197,6 +207,15 @@
   <canvas id="canvas"></canvas>
   
   <div style="top: 0; left: 0;" class="overlay">
+    <div>
+      <button onclick="toy.timeRate = document.getElementById('timerate').value = 0; return true;">❚❚</button>
+      <button onclick="toy.timeRate = document.getElementById('timerate').value = 1; return true;">▶</button>
+      <input type="range" id="timerate" min="-3" max="3" step="any" list="timerates" style="width: 10em">
+      <datalist id="timerates">
+       <option value="0">
+       <option value="1">
+      </datalist>
+    </div>
     <pre id="stateDisplay">
       <select id="effectMenu">
         <option value="">Random</option>

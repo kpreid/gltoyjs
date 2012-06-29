@@ -541,6 +541,8 @@ var gltoy, glw;
   // --- EffectManager ---
   
   function EffectManager(canvas, effects) {
+    var effectManager = this;
+    
     var frameTime = Date.now();
     var transition, transitionTime = 0;
     var previousEffectS, currentEffectS;
@@ -649,7 +651,6 @@ var gltoy, glw;
         var effectModule = effects[name];
         currentEffectS = {
           effect: new effectModule.Effect(parameters, glw, resources),
-          startTime: Date.now(),
           frame: {
             t: 0,
             dt: 0
@@ -667,28 +668,28 @@ var gltoy, glw;
       }
     }
     
-    function stepS(effectS, newTime, dt) {
-      effectS.frame.t = (newTime - effectS.startTime) / 1000;
+    function stepS(effectS, dt) {
+      effectS.frame.t += dt;
       effectS.frame.dt = dt;
     }
     
     function step() {
       // TODO review step, stepS for FP stability
       var newTime = Date.now();
-      var dt = (newTime - frameTime) / 1000;
+      var dt = (newTime - frameTime) / 1000 * effectManager.timeRate;
       frameTime = newTime;
       
       if (previousEffectS) {
-        stepS(previousEffectS, newTime, dt);
+        stepS(previousEffectS, dt);
         
-        transitionTime += dt;
+        transitionTime = max(0.0, transitionTime + dt);
         if (transitionTime >= 1.0) {
           previousEffectS.effect.deleteResources();
           previousEffectS = undefined;
         }
       }
       if (currentEffectS) {
-        stepS(currentEffectS, newTime, dt);
+        stepS(currentEffectS, dt);
       }
     }
     
@@ -714,6 +715,7 @@ var gltoy, glw;
     
     loop();
     
+    this.timeRate = 1;
     this.switchEffect = switchEffect;
   }
   
