@@ -93,9 +93,8 @@
                 desc += "[";
                 var length = o.length;
                 if (length === 1) {
-                  var key = keys[0];
                   desc += " ";
-                  prettyprint(o[key], nextIndent);
+                  prettyprint(o[0], nextIndent);
                   desc += " ]";
                 } else if (length > 0) {
                   if (o.every(function (v) { return typeof(v) === "number"; })) {
@@ -131,6 +130,8 @@
                     desc += "\n";
                   });
                   desc += indent + "}";
+                } else {
+                  desc += "}";
                 }
               }
               break;
