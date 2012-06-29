@@ -20,7 +20,7 @@ void main(void) {
   color += vColor * vec3(0.6) * max(0.0, dot(lightDir, vNormal));
   
   // specular
-  color += vec3(0.5) * pow(max(0.0, dot(lightDir, vNormal)), 10.0);
+  color += vec3(2.0) * pow(max(0.0, dot(reflect(-lightDir, vNormal), vec3(0.0, 0.0, 1.0))), 20.0);
   
 #else
   vec3 color = vColor;
