@@ -20,6 +20,8 @@ var gltoy, glw;
   "use strict";
   
   var floor = Math.floor;
+  var max = Math.max;
+  var min = Math.min;
   var PI = Math.PI;
   var pow = Math.pow;
   var random = Math.random;
@@ -171,6 +173,7 @@ var gltoy, glw;
     
     // View and projection transformation globals.
     var pagePixelWidth, pagePixelHeight;
+    var aspectRadiusX, aspectRadiusY;
     var pMatrix = mat4.create();
     var modelMatrix = mat4.create();
     mat4.identity(modelMatrix);
@@ -209,6 +212,10 @@ var gltoy, glw;
         gl.drawingBufferWidth = pagePixelWidth;
         gl.drawingBufferHeight = pagePixelHeight;
       }
+      
+      // Adjust aspect ratio info
+      aspectRadiusX = max(1.0, gl.drawingBufferWidth / gl.drawingBufferHeight);
+      aspectRadiusY = max(1.0, gl.drawingBufferHeight / gl.drawingBufferWidth);
       
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     }
@@ -371,6 +378,14 @@ var gltoy, glw;
       uniforms: {
         enumerable: true,
         get: function () { return uniforms; }
+      },
+      aspectRadiusX: {
+        enumerable: true,
+        get: function () { return aspectRadiusX; }
+      },
+      aspectRadiusY: {
+        enumerable: true,
+        get: function () { return aspectRadiusY; }
       },
     });
     
@@ -545,7 +560,6 @@ var gltoy, glw;
         }
       }
       
-      var aspect = gl.drawingBufferWidth / gl.drawingBufferHeight;
       var distance = effect.viewDistance();
       var clipDist = effect.farClipDistance();
       
@@ -557,10 +571,10 @@ var gltoy, glw;
         
         return ["frustum",
           distance,
-          -nearClip * tangent * aspect,
-           nearClip * tangent * aspect,
-          -nearClip * tangent,
-           nearClip * tangent,
+          -nearClip * tangent * glw.aspectRadiusX,
+           nearClip * tangent * glw.aspectRadiusX,
+          -nearClip * tangent * glw.aspectRadiusY,
+           nearClip * tangent * glw.aspectRadiusY,
            nearClip,
            clipDist
         ];
@@ -570,10 +584,10 @@ var gltoy, glw;
         
         return ["frustum",
           distance,
-          -clipFrac * radius * aspect,
-           clipFrac * radius * aspect,
-          -clipFrac * radius,
-           clipFrac * radius,
+          -clipFrac * radius * glw.aspectRadiusX,
+           clipFrac * radius * glw.aspectRadiusX,
+          -clipFrac * radius * glw.aspectRadiusY,
+           clipFrac * radius * glw.aspectRadiusY,
           distance * clipFrac,
           distance + clipDist
         ];

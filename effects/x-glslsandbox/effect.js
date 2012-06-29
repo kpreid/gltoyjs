@@ -31,12 +31,11 @@
       attrib: programW.attribs.aPosition,
       components: 3
     }]);
-    // TODO compensate for aspect ratio
     screenQuad.load([
-      -2, -2, +1,
-      +2, -2, +1,
-      -2, +2, +1,
-      +2, +2, +1
+      -glw.aspectRadiusX, -glw.aspectRadiusY, +1,
+      +glw.aspectRadiusX, -glw.aspectRadiusY, +1,
+      -glw.aspectRadiusX, +glw.aspectRadiusY, +1,
+      +glw.aspectRadiusX, +glw.aspectRadiusY, +1
     ]);
     screenQuad.send(gl.STATIC_DRAW);
 

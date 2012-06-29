@@ -131,7 +131,7 @@
         }
         
         mat4.identity(mvMatrix);
-        mat4.translate(mvMatrix, [x, y, 0]);
+        mat4.translate(mvMatrix, [x * glw.aspectRadiusX, y * glw.aspectRadiusY, 0]);
         glw.setModelMatrix(mvMatrix);
         
         switch (coloring) {
