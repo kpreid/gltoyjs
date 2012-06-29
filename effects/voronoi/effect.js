@@ -15,10 +15,6 @@
   
   var patternSeedsPerPoint = 4;
   
-  function u() {
-    return (Math.random() + Math.random() + Math.random() - 1.5)/2;
-  }
-  
   var programDesc = {
     vertex: ["vertex.glsl"],
     fragment: ["fragment.glsl"]
