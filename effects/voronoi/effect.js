@@ -2,12 +2,15 @@
 // in the accompanying file README.md or <http://opensource.org/licenses/MIT>.
 
 // TODO: Add in all the features and characteristics from the original GLToy version.
+// TODO: Figure out why we're getting flat-shading (especially in manhattan mode), even though varyings are interpolated.
 
 (function () {
   "use strict";
   
+  var atan = Math.atan;
   var cos = Math.cos;
   var PI = Math.PI;
+  var randBool = gltoy.randBool;
   var randElem = gltoy.randElem;
   var randInt = gltoy.randInt;
   var random = Math.random;
@@ -26,10 +29,12 @@
   exports.configure = function () {
     var parameters = {
       numPoints: 2 + randInt(40),
-      metric: randElem(["manhattan", "euclidean"]),
+      metric: randElem(["manhattan", "euclidean", "euclidean", "euclidean"]),
       pattern: randElem(["scatter", "chain"]),
-      coloring: randElem(["fixed", "gradient1", "gradient2", "uniform", "varying"])
+      coloring: randElem(["fixed", "gradient1", "gradient2", "uniform", "varying"]),
+      lighting: randBool()
     };
+    if (parameters.coloring === "uniform") parameters.lighting = true;
     switch (parameters.pattern) {
       case "scatter":
         parameters.patternSeeds = [];
@@ -71,17 +76,34 @@
     var coneVertices = parameters.metric === "manhattan" ? 4 : 50;
     var coneRadius = 3; // TODO should depend on aspect ratio
     
-    var programW = glw.compile(programDesc, resources);
+    var programW = glw.compile(programDesc, resources, {
+      LIGHTING: parameters.lighting
+    });
     
-    var cverts = [0, 0, 0];
+    var nh = cos(atan(coneRadius));
+    var nz = sin(atan(coneRadius));
+    var cverts = [];
     for (var i = 0; i <= coneVertices; i += 1) {
       var j = i * TWOPI / coneVertices;
-      cverts.push(coneRadius * Math.sin(j), coneRadius * Math.cos(j), -1);
+      var s = sin(j);
+      var c = cos(j);
+      //console.log(Math.sqrt(nh*nh*s*s + nh*c*nh*c + nz*nz), 
+      //            Math.sqrt(nh*nh*s*s + nh*nh*c*c + nz*nz), Math.sqrt(s*s + c*c));
+      cverts.push(
+        coneRadius * s, coneRadius * c, -1, nh * s, nh * c, nz,
+        0, 0, 0, nh * s, nh * c, nz
+      );
     }
-    var cone = new glw.BufferAndArray([{
-      attrib: programW.attribs.aVertexPosition,
-      components: 3
-    }]);
+    var cone = new glw.BufferAndArray([
+      {
+        attrib: programW.attribs.aPosition,
+        components: 3
+      },
+      {
+        attrib: programW.attribs.aNormal,
+        components: 3
+      }
+    ]);
     cone.load(cverts);
     cone.send(gl.STATIC_DRAW);
 
@@ -135,7 +157,7 @@
         }
         
         cone.attrib();
-        cone.draw(gl.TRIANGLE_FAN);
+        cone.draw(gl.TRIANGLE_STRIP);
       }
     };
     
