@@ -18,6 +18,10 @@
   
   var TWOPI = PI * 2;
   var patternSeedsPerPoint = 4;
+  var coneSlope = 4;
+  function hypot(x, y) {
+    return Math.sqrt(x*x + y*y);
+  }
   
   var programDesc = {
     vertex: ["vertex.glsl"],
@@ -73,8 +77,12 @@
     var patternSeeds = parameters.patternSeeds;
     var coloring = parameters.coloring;
     var colors = parameters.colors;
-    var coneVertices = parameters.metric === "manhattan" ? 4 : 50;
-    var coneRadius = 3; // TODO should depend on aspect ratio
+    
+    var coneVertices = parameters.metric === "manhattan" ? 4 : 100;
+    var coneRadius = (parameters.metric === "manhattan"
+        ? glw.aspectRadiusX + glw.aspectRadiusY
+        : hypot(glw.aspectRadiusX, glw.aspectRadiusY)
+    ) * 2;
     
     var programW = glw.compile(programDesc, resources, {
       LIGHTING: parameters.lighting
@@ -90,7 +98,7 @@
       //console.log(Math.sqrt(nh*nh*s*s + nh*c*nh*c + nz*nz), 
       //            Math.sqrt(nh*nh*s*s + nh*nh*c*c + nz*nz), Math.sqrt(s*s + c*c));
       cverts.push(
-        coneRadius * s, coneRadius * c, -1, nh * s, nh * c, nz,
+        coneRadius * s, coneRadius * c, -coneRadius / coneSlope, nh * s, nh * c, nz,
         0, 0, 0, nh * s, nh * c, nz
       );
     }
