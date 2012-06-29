@@ -1,7 +1,12 @@
 // Copyright 2011-2012 Kevin Reid under the terms of the MIT License as detailed
 // in the accompanying file README.md or <http://opensource.org/licenses/MIT>.
 
-// TODO: Add in all the features and characteristics from the original GLToy version.
+/* TODO: Add in all the features and characteristics from the original GLToy version:
+  * Draw as points instead of lines.
+  * Draw with blending.
+  * More frequently choose the no-tumble option.
+  * Cylindrical and spherical coordinate systems.
+*/
 
 (function () {
   "use strict";
