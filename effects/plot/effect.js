@@ -191,7 +191,7 @@
     }
 
     this.setState = function () {
-      gl.disable(gl.CULL_FACE);
+      gl.enable(gl.DEPTH_TEST);
       gl.blendFunc(gl.ONE, gl.ONE);
     };
 

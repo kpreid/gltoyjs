@@ -60,7 +60,7 @@
       array[i++] = z / radius * SCALE;
     }
     var grid = new glw.BufferAndArray([{
-      attrib: glw.attribs.aVertexPosition,
+      attrib: programW.attribs.aVertexPosition,
       components: 3
     }]);
     grid.array = array;
@@ -68,7 +68,6 @@
 
     this.setState = function () {
       glw.useProgramW(programW);
-      gl.disable(gl.DEPTH_TEST);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE);
     };

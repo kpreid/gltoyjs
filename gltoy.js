@@ -14,7 +14,7 @@ GL/shader state management policies
 TODO write this up
 */
 
-var gltoy;
+var gltoy, glw;
 
 (function () {
   "use strict";
@@ -112,6 +112,7 @@ var gltoy;
     var uniforms = {};
     for (i = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS) - 1; i >= 0; i--) {
       name = gl.getActiveUniform(program, i).name;
+      name = name.replace(/\[0\]$/, "");
       uniforms[name] = gl.getUniformLocation(program, name);
     }
     
@@ -607,15 +608,18 @@ var gltoy;
       }
     }
     
-    var glw = new gltoy.GLWrapper(canvas);
+    /*var */glw = new gltoy.GLWrapper(canvas);
     var gl = glw.context;
 
     var resourceCache = Object.create(null);
     
     function resetStateFor(effect, trf, mix) {
       glw.setTransition(interpView(), trf, mix); // clear transition matrix
-      gl.enable(gl.DEPTH_TEST);
+      gl.disable(gl.DEPTH_TEST);
+      gl.disable(gl.CULL_FACE);
       gl.disable(gl.BLEND);
+      for (var i = gl.getParameter(gl.MAX_VERTEX_ATTRIBS) - 1; i >= 0; i--)
+        gl.disableVertexAttribArray(i);
       effect.setState();
     }
     
@@ -689,12 +693,17 @@ var gltoy;
     return array[randInt(array.length)];
   }
   
+  function randBool() {
+    return Boolean(randInt(2));
+  }
+  
   // --- Export ---
 
   gltoy = def({
     EffectManager: EffectManager,
     fetchShaders: fetchShaders,
     GLWrapper: GLWrapper,
+    randBool: randBool,
     randElem: randElem,
     randInt: randInt,
     Tumbler: Tumbler

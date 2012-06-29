@@ -60,7 +60,7 @@
       cverts.push(coneRadius * Math.sin(j), coneRadius * Math.cos(j), -1);
     }
     var cone = new glw.BufferAndArray([{
-      attrib: glw.attribs.aVertexPosition,
+      attrib: programW.attribs.aVertexPosition,
       components: 3
     }]);
     cone.load(cverts);
