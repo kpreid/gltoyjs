@@ -29,6 +29,7 @@
   exports.configure = function () {
     var parameters = {
       numPoints: 2 + randInt(40),
+      metric: randElem(["manhattan", "euclidean"]),
       pattern: randElem(["scatter", "chain"]),
     };
     switch (parameters.pattern) {
@@ -52,14 +53,14 @@
     
     var numPoints = parameters.numPoints;
     var patternSeeds = parameters.patternSeeds;
-    var coneVertices = 50;
+    var coneVertices = parameters.metric === "manhattan" ? 4 : 50;
     var coneRadius = 3; // TODO should depend on aspect ratio
     
     var programW = glw.compile(programDesc, resources);
     
     var cverts = [0, 0, 0];
-    for (var i = 0; i <= 50; i += 1) {
-      var j = i * 2*PI / 50;
+    for (var i = 0; i <= coneVertices; i += 1) {
+      var j = i * 2*PI / coneVertices;
       cverts.push(coneRadius * Math.sin(j), coneRadius * Math.cos(j), -1);
     }
     var cone = new glw.BufferAndArray([{
