@@ -83,7 +83,8 @@
         toy.switchEffect(name, parameters);
 
         var desc = " ";
-        function prettyprint(o) {
+        function prettyprint(o, indent) {
+          var nextIndent = indent + "  ";
           switch (typeof o) {
             case "object":
               if (Array.isArray(o)) {
@@ -92,42 +93,43 @@
                 if (length === 1) {
                   var key = keys[0];
                   desc += " ";
-                  prettyprint(o[key]);
-                  desc += " ";
+                  prettyprint(o[key], nextIndent);
+                  desc += " ]";
                 } else if (length > 0) {
                   if (o.every(function (v) { return typeof(v) === "number"; })) {
                     for (var key = 0; key < length; key++) {
                       desc += " ";
-                      prettyprint(o[key]);
+                      prettyprint(o[key], nextIndent);
                       desc += ",";
                     }
+                    desc += "]";
                   } else {
                     desc += "\n";
                     for (var key = 0; key < length; key++) {
-                      desc += "  ";
-                      prettyprint(o[key]);
+                      desc += nextIndent;
+                      prettyprint(o[key], nextIndent);
                       desc += "\n";
                     }
+                    desc += indent + "]";
                   }
                 }
-                desc += "]";
               } else {
                 desc += "{";
                 var keys = Object.keys(o);
                 if (keys.length === 1) {
                   var key = keys[0];
                   desc += " " + key + ": ";
-                  prettyprint(o[key]);
-                  desc += " ";
+                  prettyprint(o[key], nextIndent);
+                  desc += " }";
                 } else if (keys.length > 0) {
                   desc += "\n";
                   keys.forEach(function (key) {
-                    desc += "  " + key + ": ";
-                    prettyprint(o[key]);
+                    desc += nextIndent + key + ": ";
+                    prettyprint(o[key], nextIndent);
                     desc += "\n";
                   });
+                  desc += indent + "}";
                 }
-                desc += "}";
               }
               break;
             case "number":
@@ -138,7 +140,7 @@
               break;
           }
         }
-        prettyprint(parameters);
+        prettyprint(parameters, "");
         stateDisplay.textContent = desc;
         stateDisplay.insertBefore(effectMenu, stateDisplay.firstChild);
         effectMenu.value = name;
