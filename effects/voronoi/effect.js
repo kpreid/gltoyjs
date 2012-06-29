@@ -113,8 +113,8 @@
       gl.enable(gl.DEPTH_TEST);
     };
 
-    this.draw = function () {
-      var now = new Date().getTime() / 1000;
+    this.draw = function (frame) {
+      var now = frame.t;
       
       for (var i = 0; i < numPoints; i++) {
         var x = 0, y = 0;

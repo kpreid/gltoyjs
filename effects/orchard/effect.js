@@ -72,9 +72,9 @@
       gl.blendFunc(gl.ONE, gl.ONE);
     };
 
-    this.draw = function () {
+    this.draw = function (frame) {
       mat4.identity(mvMatrix);
-      tumbler.apply(mvMatrix, Date.now() / 1000);
+      tumbler.apply(mvMatrix, frame.t);
       mat4.scale(mvMatrix, [3, 3, 3]);
       glw.setModelMatrix(mvMatrix);
 

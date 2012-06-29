@@ -53,9 +53,8 @@
       gl.uniform2f(glw.uniforms.resolution, gl.drawingBufferWidth, gl.drawingBufferHeight);
     };
     
-    var t0 = Date.now() / 1000;
-    this.draw = function () {
-      var now = Date.now() / 1000 - t0;
+    this.draw = function (frame) {
+      var now = frame.t;
       
       // GLSL sandbox interface
       gl.uniform1f(glw.uniforms.time, now);

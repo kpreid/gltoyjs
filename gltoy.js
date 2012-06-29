@@ -543,11 +543,12 @@ var gltoy, glw;
   function EffectManager(canvas, effects) {
     var frameTime = Date.now();
     var transition, transitionTime = 0;
-    var previousEffect, currentEffect;
+    var previousEffectS, currentEffectS;
     
     var viewWarnings = Object.create(null);
     
-    function computeView(effect) {
+    function computeView(effectS) {
+      var effect = effectS.effect;
       function gvm(name, fallback) {
         if (effect[name]) {
           return effect[name]();
@@ -595,10 +596,10 @@ var gltoy, glw;
     }
     
     function interpView() {
-      if (previousEffect) {
-        if (currentEffect) {
-          var pv = computeView(previousEffect);
-          var cv = computeView(currentEffect);
+      if (previousEffectS) {
+        if (currentEffectS) {
+          var pv = computeView(previousEffectS);
+          var cv = computeView(currentEffectS);
           // TODO implement ortho
           return [
             "frustum",
@@ -611,11 +612,11 @@ var gltoy, glw;
             interp(pv[7], cv[7], transitionTime)
           ];
         } else {
-          return computeView(previousEffect);
+          return computeView(previousEffectS);
         }
       } else {
-        if (currentEffect) {
-          return computeView(currentEffect);
+        if (currentEffectS) {
+          return computeView(currentEffectS);
         } else {
           return ["ortho", 0, -1, 1, -1, 1, -1, 1];
         }
@@ -627,26 +628,33 @@ var gltoy, glw;
 
     var resourceCache = Object.create(null);
     
-    function resetStateFor(effect, trf, mix) {
+    function resetStateFor(effectS, trf, mix) {
       glw.setTransition(interpView(), trf, mix); // clear transition matrix
       gl.disable(gl.DEPTH_TEST);
       gl.disable(gl.CULL_FACE);
       gl.disable(gl.BLEND);
       for (var i = gl.getParameter(gl.MAX_VERTEX_ATTRIBS) - 1; i >= 0; i--)
         gl.disableVertexAttribArray(i);
-      effect.setState();
+      effectS.effect.setState();
     }
     
     function switchEffect(name, parameters) {
       function finish(resources) {
-        if (previousEffect) previousEffect.deleteResources();
-        previousEffect = currentEffect;
+        if (previousEffectS) previousEffectS.effect.deleteResources();
+        previousEffectS = currentEffectS;
         transition = new SlideTransition();
         transitionTime = 0;
         
         resourceCache[name] = resources;
         var effectModule = effects[name];
-        currentEffect = new effectModule.Effect(parameters, glw, resources);
+        currentEffectS = {
+          effect: new effectModule.Effect(parameters, glw, resources),
+          startTime: Date.now(),
+          frame: {
+            t: 0,
+            dt: 0
+          }
+        };
       }
       
       if (name in resourceCache) {
@@ -659,16 +667,28 @@ var gltoy, glw;
       }
     }
     
+    function stepS(effectS, newTime, dt) {
+      effectS.frame.t = (newTime - effectS.startTime) / 1000;
+      effectS.frame.dt = dt;
+    }
+    
     function step() {
+      // TODO review step, stepS for FP stability
       var newTime = Date.now();
       var dt = (newTime - frameTime) / 1000;
       frameTime = newTime;
-      if (previousEffect) {
+      
+      if (previousEffectS) {
+        stepS(previousEffectS, newTime, dt);
+        
         transitionTime += dt;
         if (transitionTime >= 1.0) {
-          previousEffect.deleteResources();
-          previousEffect = undefined;
+          previousEffectS.effect.deleteResources();
+          previousEffectS = undefined;
         }
+      }
+      if (currentEffectS) {
+        stepS(currentEffectS, newTime, dt);
       }
     }
     
@@ -676,17 +696,17 @@ var gltoy, glw;
       step();
       
       glw.beginFrame();
-      if (previousEffect) {
-        resetStateFor(previousEffect, transition.out, transitionTime);
-        previousEffect.draw();
+      if (previousEffectS) {
+        resetStateFor(previousEffectS, transition.out, transitionTime);
+        previousEffectS.effect.draw(previousEffectS.frame);
       }
-      if (currentEffect) {
-        if (previousEffect) {
-          resetStateFor(currentEffect, transition.in, transitionTime);
+      if (currentEffectS) {
+        if (previousEffectS) {
+          resetStateFor(currentEffectS, transition.in, transitionTime);
         } else {
-          resetStateFor(currentEffect, noop, 1);
+          resetStateFor(currentEffectS, noop, 1);
         }
-        currentEffect.draw();
+        currentEffectS.effect.draw(currentEffectS.frame);
       }
       glw.endFrame();
       window.requestAnimationFrame(loop, canvas);

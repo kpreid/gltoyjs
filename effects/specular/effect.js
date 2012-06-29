@@ -28,6 +28,7 @@
     var parameters = {
       // TODO better parameter names
       tumbler: gltoy.Tumbler.configure(),
+      timeOrigin: random() * 10000,
       blend: randBool(),
       separate: randBool(),
       torusMask: 1 + randInt((1 << 3) - 1),
@@ -104,6 +105,7 @@
     var nTorus = parameters.nTorus;
     var separate = parameters.separate;
     var torusMask = parameters.torusMask;
+    var timeOrigin = parameters.timeOrigin;
     
     var tori = [];
     for (var i = 0; i < nTorus; i++) {
@@ -123,8 +125,9 @@
       }
     };
     
-    this.draw = function () {
-      var now = new Date().getTime() / 1000;
+    this.draw = function (frame) {
+      // Start at nonzero time to get variation from our periodic functions
+      var now = frame.t + timeOrigin;
       
       mat4.identity(baseMatrix);
       tumbler.apply(baseMatrix, now);

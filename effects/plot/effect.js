@@ -195,17 +195,14 @@
       gl.blendFunc(gl.ONE, gl.ONE);
     };
 
-    var start = Date.now() / 1000;
-    this.draw = function () {
-      var time = Date.now() / 1000 - start;
-      
+    this.draw = function (frame) {
       mat4.identity(mvMatrix);
-      tumbler.apply(mvMatrix, time); // TODO general time framework
+      tumbler.apply(mvMatrix, frame.t);
       mat4.scale(mvMatrix, [3, 3, 3]);
       glw.setModelMatrix(mvMatrix);
       
       glw.useProgramW(plotProgramW);
-      gl.uniform1f(plotProgramW.uniforms.uTime, time);
+      gl.uniform1f(plotProgramW.uniforms.uTime, frame.t);
       plot.attrib();
       plot.draw(gl.LINE_STRIP);
 
@@ -213,7 +210,7 @@
         gl.enable(gl.BLEND);
         gl.disable(gl.DEPTH_TEST);
         glw.useProgramW(sparkProgramW);
-        gl.uniform1f(sparkProgramW.uniforms.uTime, time);
+        gl.uniform1f(sparkProgramW.uniforms.uTime, frame.t);
         spark.attrib();
         spark.draw(gl.TRIANGLES);
         spark.unattrib();
