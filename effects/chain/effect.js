@@ -9,6 +9,7 @@
 (function () {
   "use strict";
   
+  var abs = Math.abs;
   var ceil = Math.ceil;
   var cos = Math.cos;
   var floor = Math.floor;
@@ -301,7 +302,7 @@
       state[current] += velocity * frame.dt;
       
       if (rounder(state[current] / mult) != sector) {
-        state[current] = rounder(state[current] / mult) * mult;
+        state[current] = mod(rounder(state[current] / mult), divisions) * mult;
         
         current = randInt(state.length);
         velocity = (0.03 + random() * 3.47) * HALFPI * (randBool() ? 1 : -1);
@@ -313,9 +314,36 @@
       }
     };
     
+    var flipXMat = mat4.createFrom(
+      1, 0, 0, 0,
+      0, -1, 0, 0,
+      0, 0, -1, 0,
+      0, 0, 0, 1
+    );
+    var flipZMat = mat4.createFrom(
+      -1, 0, 0, 0,
+      0, -1, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1
+    );
     this.apply = function (t, i) {
-      mat4.rotateX(matrix, state[i*statePerLink]);
-      mat4.rotateZ(matrix, state[i*statePerLink+1]);
+      // Special case 0 and π to avoid visible z-fighting due to slightly misplaced overlaps
+      var s1 = state[i*statePerLink];
+      if (s1 !== 0) {
+        if (abs(s1 - PI) < 1e-4) {
+          mat4.multiply(matrix, flipXMat);
+        } else {
+          mat4.rotateX(matrix, s1);
+        }
+      }
+      var s2 = state[i*statePerLink+1];
+      if (s2 !== 0) {
+        if (abs(s2 - PI) < 1e-4) {
+          mat4.multiply(matrix, flipZMat);
+        } else {
+          mat4.rotateZ(matrix, s2);
+        }
+      }
     };
   }
   
