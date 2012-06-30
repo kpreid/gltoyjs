@@ -684,6 +684,14 @@ var gltoy, glw;
       var dt = (newTime - frameTime) / 1000 * effectManager.timeRate;
       frameTime = newTime;
       
+      if (dt > 1) {
+        // Don't jerk on resume after starvation
+        dt = 0;
+      } else {
+        // Also maximum step size
+        dt = min(dt, 1/15);
+      }
+      
       if (previousEffectS) {
         stepS(previousEffectS, dt);
         
