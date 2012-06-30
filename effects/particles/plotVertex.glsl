@@ -1,4 +1,5 @@
 attribute vec2 aTexCoord;
+attribute float aLineEnd;
 
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
@@ -36,6 +37,8 @@ void main(void) {
   vec3 vel = state2.xyz;
   float hue = state1.w;
   float saturation = state2.w;
+  
+  pos += aLineEnd * vel;
   
   vec4 eyePosition = uMVMatrix * vec4(pos, 1.0);
   gl_Position = uPMatrix * eyePosition;

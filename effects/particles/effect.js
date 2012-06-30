@@ -8,7 +8,11 @@
   
   * Take a look at the incomplete "fountain" motion.
   
+  * Warp backwards mode.
+  
   * Speed modifier.
+  * Particle size modifier.
+  * Particle size depending on viewport size.
 */
 
 (function () {
@@ -57,12 +61,13 @@
   };
   
   exports.configure = function () {
+    var motion = randElem(["harmonic", "warp", "spray"]);
     var parameters = {
       numParticles: 10000,
-      shape: randElem(["square", "soft"]),
-      motion: randElem(["harmonic", "warp", "spray"])
+      shape: randElem(["line", "square", "soft"]),
+      motion: motion,
+      nearView: motions[motion].mustBeNear || randBool()
     };
-    parameters.nearView = motions[parameters.motion].mustBeNear || randBool();
     return parameters;
   };
   
@@ -184,7 +189,8 @@
       vertex: ["plotVertex.glsl"],
       fragment: ["plotFragment.glsl"]
     }, resources, {
-      SHAPE_SOFT: shape === "soft"
+      SHAPE_SOFT: shape === "soft",
+      SHAPE_LINE: shape === "line"
     });
     glw.useProgramW(plotProgramW);
     gl.uniform1f(glw.uniforms.uResolution, stateTexSize);
@@ -232,16 +238,40 @@
     var stateTexture = makeTexture(initialStateArray);
     var nextStateTexture = makeTexture(null);
     
-    // Generate buffers
-    var array = new Float32Array(numParticles * 2);
-    for (var i = 0; i < numParticles; i++) {
-      array[i*2+0] = particleTexSpix(i) / stateTexSize;
-      array[i*2+1] = particleTexTpix(i) / stateTexSize;
+    // Generate buffer for rendered view view
+    if (shape === "line") {
+      var array = new Float32Array(numParticles * 6);
+      for (var i = 0; i < numParticles; i++) {
+        array[i*6+0] = particleTexSpix(i) / stateTexSize;
+        array[i*6+1] = particleTexTpix(i) / stateTexSize;
+        array[i*6+2] = +0.03;
+        array[i*6+3] = particleTexSpix(i) / stateTexSize;
+        array[i*6+4] = particleTexTpix(i) / stateTexSize;
+        array[i*6+5] = -0.03;
+      }
+      var indexes = new glw.BufferAndArray([
+        {
+          attrib: plotProgramW.attribs.aTexCoord,
+          components: 2
+        },
+        {
+          attrib: plotProgramW.attribs.aLineEnd,
+          components: 1
+        }
+      ]);
+      var plotPrimitive = gl.LINES;
+    } else /* shape is point */ {
+      var array = new Float32Array(numParticles * 2);
+      for (var i = 0; i < numParticles; i++) {
+        array[i*2+0] = particleTexSpix(i) / stateTexSize;
+        array[i*2+1] = particleTexTpix(i) / stateTexSize;
+      }
+      var indexes = new glw.BufferAndArray([{
+        attrib: plotProgramW.attribs.aTexCoord,
+        components: 2
+      }]);
+      var plotPrimitive = gl.POINTS;
     }
-    var indexes = new glw.BufferAndArray([{
-      attrib: plotProgramW.attribs.aTexCoord,
-      components: 2
-    }]);
     indexes.array = array;
     indexes.send(gl.STATIC_DRAW);
 
@@ -328,7 +358,7 @@
       gl.uniform1i(glw.uniforms.uState, 0);
       
       indexes.attrib();
-      indexes.draw(gl.POINTS);
+      indexes.draw(plotPrimitive);
       indexes.unattrib();
     };
     
