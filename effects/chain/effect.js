@@ -17,6 +17,7 @@
   var ceil = Math.ceil;
   var cos = Math.cos;
   var floor = Math.floor;
+  var hsvToRGB = gltoy.hsvToRGB;
   var mod = gltoy.mod;
   var PI = Math.PI;
   var pow = Math.pow;
@@ -43,6 +44,7 @@
       length: 10 + randInt(1000),
       motion: randElem(["sine", "bend", "curl"]),
       motionPar: {},
+      coloring: randElem(["q", "r"/*, "θ"*/]),
       scale: 0.005 + 0.1 * random(),
       copies: 1 + randInt(6)
     };
@@ -74,6 +76,7 @@
     
     var chainLength = parameters.length;
     var copies = parameters.copies;
+    var coloring = parameters.coloring;
 
     var chainMatrix = mat4.create();
     var motion = new motions[parameters.motion](chainMatrix, chainLength, parameters.motionPar);
@@ -134,6 +137,7 @@
     };
     
     var translation = vec3.createFrom(0, 2, 0);
+    var hsvbuf = vec3.create();
     
     this.draw = function (frame) {
       var t = frame.t;
@@ -145,9 +149,27 @@
 
       mat4.identity(chainMatrix);
       for (var i = 0; i < chainLength; i++) {
-        gl.uniform3f(glw.uniforms.uColor, 1, i/chainLength, 0);
         gl.uniformMatrix4fv(glw.uniforms.uChainMatrix, false, chainMatrix);
-
+        
+        switch (coloring) {
+          case "q":
+            var q = i * 0.753 + t;
+            gl.uniform3f(glw.uniforms.uColor,
+              sin(mod(q, PI*2.0) * 1.0 + PI * 0.0/6) / 2 + 0.5,
+              sin(mod(q, PI*2.2) * 1.1 + PI * 4.0/6) / 2 + 0.5,
+              sin(mod(q, PI*2.4) * 1.2 + PI * 8.0/6) / 2 + 0.5);
+            break;
+          case "r":
+            hsvToRGB(hsvbuf, (i + t) / chainLength, 1, 1);
+            gl.uniform3fv(glw.uniforms.uColor, hsvbuf);
+            break;
+          // TODO: can't do this because the copy is on GPU side here
+          //case "θ":
+          //  hsvToRGB(hsvbuf, (copy + t / 3) / copies, 1, 1);
+          //  gl.uniform3fv(glw.uniforms.uColor, hsvbuf);
+          //  break;
+        }
+        
         mat4.translate(chainMatrix, translation);
         motion.apply(t, i);
         

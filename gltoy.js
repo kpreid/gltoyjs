@@ -19,6 +19,8 @@ var gltoy, glw;
 (function () {
   "use strict";
   
+  var abs = Math.abs;
+  var ceil = Math.ceil;
   var floor = Math.floor;
   var max = Math.max;
   var min = Math.min;
@@ -734,6 +736,23 @@ var gltoy, glw;
   
   // --- Utilities for effects ---
   
+  function hsvToRGB(rgb, h, s, v) {
+    // Conversion per http://en.wikipedia.org/wiki/HSL_and_HSV#Converting_to_RGB
+    h = mod(h, 1);
+    var c = s * v;
+    var hp = h * 6;
+    var x = c * (1 - abs(mod(hp, 2) - 1));
+    switch (ceil(hp)) {
+      case 1: rgb[0] = c; rgb[1] = x; rgb[2] = 0; break;
+      case 2: rgb[0] = x; rgb[1] = c; rgb[2] = 0; break;
+      case 3: rgb[0] = 0; rgb[1] = c; rgb[2] = x; break;
+      case 4: rgb[0] = 0; rgb[1] = x; rgb[2] = c; break;
+      case 5: rgb[0] = x; rgb[1] = 0; rgb[2] = c; break;
+      case 6: rgb[0] = c; rgb[1] = 0; rgb[2] = x; break;
+    }
+    return rgb;
+  }
+  
   function randInt(bound) {
     return floor(random() * bound);
   }
@@ -756,6 +775,7 @@ var gltoy, glw;
     EffectManager: EffectManager,
     fetchShaders: fetchShaders,
     GLWrapper: GLWrapper,
+    hsvToRGB: hsvToRGB,
     mod: mod,
     randBool: randBool,
     randElem: randElem,
