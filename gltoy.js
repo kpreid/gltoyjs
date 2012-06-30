@@ -520,20 +520,110 @@ var gltoy, glw;
       mat4.rotate(matrix, -angle, [0, 0, 1]);
     };
   }
+  function symmetricTransitionOut(matrix, mix) {
+    return this.in(matrix, 1-mix);
+  }
   
   function SlideTransition() {
     return new BaseTransition({
       out: function (matrix, mix) {
-        mat4.translate(matrix, [0, mix * 6, 0]);
+        mat4.translate(matrix, [0, (pow(mix, 2)) * 12, 0]);
       },
       in: function (matrix, mix) {
-        mat4.translate(matrix, [0, mix * 6 - 6, 0]);
+        mat4.translate(matrix, [0, (pow(1-mix, 2)) * -12, 0]);
       }
-    })
+    });
+  }
+  
+  function ScaleInTransition() {
+    return new BaseTransition({
+      out: symmetricTransitionOut,
+      in: function (matrix, mix) {
+        mix = pow(mix, 2);
+        mat4.scale(matrix, [mix, mix, mix]);
+      }
+    });
+  }
+  
+  function ScaleOutTransition() {
+    return new BaseTransition({
+      out: symmetricTransitionOut,
+      in: function (matrix, mix) {
+        mix = pow(mix, -4);
+        mat4.scale(matrix, [mix, mix, mix]);
+      }
+    });
+  }
+  
+  function SquishShiftTransition() {
+    return new BaseTransition({
+      out: function (matrix, mix) {
+        mat4.translate(matrix, [mix, 0, 0]);
+        mat4.scale(matrix, [1 - mix, 1 - mix, 1 - mix]);
+      },
+      in: function (matrix, mix) {
+        mat4.translate(matrix, [(-1 + mix), 0, 0]);
+        mat4.scale(matrix, [mix, mix, mix]);
+      }
+    });
+  }
+  
+  function SquishCrossTransition() {
+    return new BaseTransition({
+      out: function (matrix, mix) {
+        mat4.scale(matrix, [1 - mix, 1/(1 - mix), 1]);
+      },
+      in: function (matrix, mix) {
+        mat4.scale(matrix, [1/mix, mix, 1]);
+      }
+    });
+  }
+  
+  function SquishSpinTransition() {
+    return new BaseTransition({
+      out: function (matrix, mix) {
+        var mix2 = mix*mix;
+        var angle = mix2*TWOPI;
+        mat4.rotateZ(matrix, angle);
+        mat4.scale(matrix, [1-mix2, 1, 1-mix2]);
+        mat4.rotateZ(matrix, -angle);
+      },
+      in: function (matrix, mix) {
+        var mix2 = mix*mix;
+        var angle = mix2*TWOPI;
+        mat4.rotateZ(matrix, angle);
+        mat4.scale(matrix, [mix2, 1, mix2]);
+        mat4.rotateZ(matrix, -angle);
+      }
+    });
+  }
+  
+  function WhirlTransition() {
+    return new BaseTransition({
+      out: function (matrix, mix) {
+        var mix2 = mix*mix;
+        var mix4 = mix2*mix2;
+        mat4.rotateY(matrix, mix2*TWOPI*6);
+        mat4.scale(matrix, [1 / (1 - mix4), 1, 1 / (1 - mix4)]);
+      },
+      in: function (matrix, mix) {
+        var mix2 = mix*mix;
+        var mix4 = mix2*mix2;
+        mat4.rotateY(matrix, mix2*TWOPI*6);
+        mat4.scale(matrix, [mix4, 1, mix4]);
+      }
+    });
   }
   
   var transitions = [
-    SlideTransition
+    SlideTransition,
+    SlideTransition,
+    ScaleInTransition,
+    ScaleOutTransition,
+    SquishShiftTransition,
+    SquishCrossTransition,
+    SquishSpinTransition,
+    WhirlTransition
   ];
   
   // --- EffectManager ---
@@ -643,7 +733,7 @@ var gltoy, glw;
       function finish(resources) {
         if (previousEffectS) previousEffectS.effect.deleteResources();
         previousEffectS = currentEffectS;
-        transition = new SlideTransition();
+        transition = new (randElem(transitions))();
         transitionTime = 0;
         
         resourceCache[name] = resources;
