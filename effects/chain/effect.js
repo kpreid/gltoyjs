@@ -2,7 +2,6 @@
 // in the accompanying file README.md or <http://opensource.org/licenses/MIT>.
 
 // TODO: Add in all the features and characteristics from the original GLToy version.
-// TODO: Figure out why we're getting flat-shading (especially in manhattan mode), even though varyings are interpolated.
 
 (function () {
   "use strict";

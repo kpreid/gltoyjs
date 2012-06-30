@@ -22,9 +22,10 @@ mat4 rotmat(float angle) {
 }
 
 void main(void) {
-  gl_Position = uMVMatrix * rotmat(aRepeatAngle) * uChainMatrix * vec4(aPosition, 1.0);
+  mat4 completeMV = uMVMatrix * rotmat(aRepeatAngle) * uChainMatrix;
+  gl_Position = completeMV * vec4(aPosition, 1.0);
   vColor = uColor;
-  vNormal = aNormal;
+  vNormal = normalize(mat3(completeMV) * aNormal);
   vPosition = vec3(gl_Position); // TODO this should be in model space, excluding the viewDistance and transition
   gl_Position = uPMatrix * gl_Position;
 }

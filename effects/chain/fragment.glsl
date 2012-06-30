@@ -17,7 +17,7 @@ void main(void) {
   color += vec3(0.05);
   
   // diffuse
-  color += vColor * vec3(0.6) * max(0.0, dot(lightDir, vNormal));
+  color += vColor * vec3(1.0) * max(0.0, dot(lightDir, vNormal));
   
   // specular
   color += vec3(0.4) * pow(max(0.0, dot(reflect(-lightDir, vNormal), vec3(0.0, 0.0, 1.0))), 20.0);
