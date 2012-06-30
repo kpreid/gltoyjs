@@ -275,7 +275,24 @@
       return !randInt(4);
     }
     
-    // TODO add state initialization
+    var initializationType = randInt(3);
+    for (var i = 0; i < state.length; i++) {
+      switch (initializationType) {
+        case 0:
+          if (nonzeroPreference()) {
+            state[i] = TWOPI / divisions * (1 + randInt(divisions - 1));
+          } else {
+            state[i] = 0;
+          }
+          break;
+        case 1:
+          state[i] = 0;
+          break;
+        case 2:
+          state[i] = i % 2 ? PI : 0;
+          break;
+      }
+    }
     
     this.step = function (frame) {
       var rounder = velocity < 0 ? ceil : floor;
@@ -287,7 +304,7 @@
         state[current] = rounder(state[current] / mult) * mult;
         
         current = randInt(state.length);
-        velocity = 0.03 + random() * 3.47 * HALFPI * (randBool() ? 1 : -1);
+        velocity = (0.03 + random() * 3.47) * HALFPI * (randBool() ? 1 : -1);
         if (nonzeroPreference() || mod(state[current], TWOPI) === 0) {
           mult = TWOPI / divisions;
         } else {
