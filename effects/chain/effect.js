@@ -2,10 +2,7 @@
 // in the accompanying file README.md or <http://opensource.org/licenses/MIT>.
 
 /* TODO: Add in all the features and characteristics from the original GLToy version:
-  * Disable lighting.
-  * Backface culling.
   * Wandering off the origin.
-  * Color schemes.
   * Disable depth test for planar conditions.
   * Blending.
 */
@@ -46,7 +43,9 @@
       shape: randElem(["diamond", "line", "triangle", "sphere"]),
       coloring: randElem(["q", "r"/*, "θ"*/]),
       scale: 0.005 + 0.1 * random(),
-      copies: 1 + randInt(6)
+      copies: 1 + randInt(6),
+      lighting: randBool(),
+      oneSided: randBool()
     };
     switch (parameters.motion) {
       case "sine":
@@ -132,13 +131,13 @@
               cos(lon) * sin(lat),
               cos(lat));
           }
-          for (var i = 0; i <= sphereLats; i++) {
-            for (var j = 0; j <= sphereLons; j++) {
+          for (var i = 0; i < sphereLats; i++) {
+            for (var j = 0; j < sphereLons; j++) {
               spherePoint(i,   j  ); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
-              spherePoint(i+1, j  ); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
-              spherePoint(i,   j+1); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
               spherePoint(i,   j+1); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
               spherePoint(i+1, j  ); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
+              spherePoint(i+1, j  ); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
+              spherePoint(i,   j+1); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
               spherePoint(i+1, j+1); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
             }
           }
@@ -147,7 +146,7 @@
     }
     
     var programW = glw.compile(programDesc, resources, {
-      LIGHTING: shapeCanBeLit
+      LIGHTING: shapeCanBeLit && parameters.lighting
     });
     
     var shape = new glw.BufferAndArray([
@@ -168,9 +167,9 @@
     shape.send(gl.STATIC_DRAW);
 
     this.setState = function () {
-      // mat4.ortho(-1.5, 1.5, -1.5, 1.5, 0.01, 100.0, pMatrix); // TODO
       glw.useProgramW(programW);
       gl.enable(gl.DEPTH_TEST);
+      gl[parameters.oneSided || parameters.shape === "sphere" ? "enable" : "disable"](gl.CULL_FACE);
     };
     
     this.step = function (frame) {
