@@ -28,9 +28,11 @@
     var parameters = {
       tumbler: gltoy.Tumbler.configure(),
       length: 50,
+      motion: randElem(["sine", "bend", "curl"]),
       scale: 0.05,
       copies: 1 + randInt(6)
     };
+    parameters.motion = "curl";
     parameters.tumbler = { type: "rotY" };
     return parameters;
   };
@@ -38,11 +40,13 @@
   exports.Effect = function (parameters, glw, resources) {
     var gl = glw.context;
     var mvMatrix = mat4.create();
-    var chainMatrix = mat4.create();
     var tumbler = new gltoy.Tumbler(parameters.tumbler);
     
     var chainLength = parameters.length;
     var copies = parameters.copies;
+
+    var chainMatrix = mat4.create();
+    var motion = new motions[parameters.motion](chainMatrix, chainLength);
     
     var coneVertices = 4;
     var coneRadius = 1;
@@ -95,24 +99,20 @@
       gl.enable(gl.DEPTH_TEST);
     };
     
-    var numWhorls = 1;
-    var rippleSpeed = 1;
-    var skew = 0;
+    var translation = vec3.createFrom(0, 2, 0);
     
     this.draw = function (frame) {
-      var now = frame.t;
+      var t = frame.t;
       
       mat4.identity(mvMatrix);
-      tumbler.apply(mvMatrix, now);
+      tumbler.apply(mvMatrix, t);
       mat4.scale(mvMatrix, [parameters.scale, parameters.scale, parameters.scale]);
       glw.setModelMatrix(mvMatrix);
 
       mat4.identity(chainMatrix);
       for (var i = 0; i < chainLength; i++) {
-        mat4.translate(chainMatrix, [0, 2, 0]);
-        mat4.rotateX(chainMatrix,
-           (i / chainLength * TWOPI * numWhorls) + (now * rippleSpeed));
-        mat4.rotateZ(chainMatrix, skew);
+        mat4.translate(chainMatrix, translation);
+        motion.apply(t, i);
         
         gl.uniform3f(glw.uniforms.uColor, 1, i/chainLength, 0);
         gl.uniformMatrix4fv(glw.uniforms.uChainMatrix, false, chainMatrix);
@@ -131,4 +131,19 @@
   exports.Effect.prototype.viewRadius = function () { return 1; };
   exports.Effect.prototype.nearClipFraction = function () { return 0.9; };
   exports.Effect.prototype.farClipDistance = function () { return 2; };
+  
+  var motions = Object.create(null);
+  motions.curl = CurlMotion;
+  
+  function CurlMotion(matrix, chainLength) {
+    var numWhorls = 1; // TODO parameterize
+    var rippleSpeed = 1;
+    var skew = 0;
+    
+    this.apply = function (t, i) {
+      mat4.rotateX(matrix,
+         (i / chainLength * TWOPI * numWhorls) + (t * rippleSpeed));
+      mat4.rotateZ(matrix, skew);
+    };
+  }
 }());
