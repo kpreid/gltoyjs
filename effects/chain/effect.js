@@ -6,7 +6,10 @@
 (function () {
   "use strict";
   
+  var ceil = Math.ceil;
   var cos = Math.cos;
+  var floor = Math.floor;
+  var mod = gltoy.mod;
   var PI = Math.PI;
   var pow = Math.pow;
   var randBool = gltoy.randBool;
@@ -35,8 +38,6 @@
       scale: 0.05,
       copies: 1 + randInt(6)
     };
-    parameters.motion = "sine";
-    parameters.tumbler = { type: "rotY" };
     switch (parameters.motion) {
       case "sine":
         if (randBool()) parameters.motionPar.rotX = true;
@@ -45,6 +46,14 @@
         if (randBool()) parameters.motionPar.transX = true;
         if (randBool()) parameters.motionPar.transY = true;
         if (randBool()) parameters.motionPar.transZ = true;
+        break;
+      case "bend":
+        parameters.motionPar.divisions = 3 + randInt(4);
+        break;
+      case "curl":
+        parameters.motionPar.whorls = randInt(50);
+        parameters.motionPar.speed = pow(2, -3 + random() * 5);
+        parameters.motionPar.skew = randBool() ? 0 : random() * HALFPI;
         break;
     }
     return parameters;
@@ -112,6 +121,10 @@
       gl.enable(gl.DEPTH_TEST);
     };
     
+    this.step = function (frame) {
+      motion.step(frame);
+    };
+    
     var translation = vec3.createFrom(0, 2, 0);
     
     this.draw = function (frame) {
@@ -124,11 +137,11 @@
 
       mat4.identity(chainMatrix);
       for (var i = 0; i < chainLength; i++) {
-        mat4.translate(chainMatrix, translation);
-        motion.apply(t, i);
-        
         gl.uniform3f(glw.uniforms.uColor, 1, i/chainLength, 0);
         gl.uniformMatrix4fv(glw.uniforms.uChainMatrix, false, chainMatrix);
+
+        mat4.translate(chainMatrix, translation);
+        motion.apply(t, i);
         
         cone.attrib();
         cone.draw(gl.TRIANGLES);
@@ -171,17 +184,51 @@
       if (rotZ) mat4.rotateZ(matrix, sin(p / 1.4 + i*i * 25 ) * QUARTERPI);
     };
   }
+  SineMotion.prototype.step = function (frame) {};
   
   function BendMotion(matrix, chainLength, parameters) {
+    var statePerLink = 2;
+    var divisions = parameters.divisions;
+    var state = new Float32Array(chainLength * statePerLink);
+    var current = randInt(state.length);
+    var velocity = TWOPI;
+    var mult = HALFPI;
+    
+    function nonzeroPreference() {
+      return !randInt(4);
+    }
+    
+    // TODO add state initialization
+    
+    this.step = function (frame) {
+      var rounder = velocity < 0 ? ceil : floor;
+      var sector = rounder(state[current] / mult);
+      
+      state[current] += velocity * frame.dt;
+      
+      if (rounder(state[current] / mult) != sector) {
+        state[current] = rounder(state[current] / mult) * mult;
+        
+        current = randInt(state.length);
+        velocity = 0.03 + random() * 3.47 * HALFPI * (randBool() ? 1 : -1);
+        if (nonzeroPreference() || mod(state[current], TWOPI) === 0) {
+          mult = TWOPI / divisions;
+        } else {
+          mult = TWOPI;
+        }
+      }
+    };
+    
     this.apply = function (t, i) {
-      // TODO
+      mat4.rotateX(matrix, state[i*statePerLink]);
+      mat4.rotateZ(matrix, state[i*statePerLink+1]);
     };
   }
   
   function CurlMotion(matrix, chainLength, parameters) {
-    var numWhorls = 1; // TODO parameterize
-    var rippleSpeed = 1;
-    var skew = 0;
+    var numWhorls = parameters.whorls;
+    var rippleSpeed = parameters.speed;
+    var skew = parameters.skew;
     
     this.apply = function (t, i) {
       mat4.rotateX(matrix,
@@ -189,4 +236,5 @@
       mat4.rotateZ(matrix, skew);
     };
   }
+  CurlMotion.prototype.step = function (frame) {};
 }());

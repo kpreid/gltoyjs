@@ -746,12 +746,17 @@ var gltoy, glw;
     return Boolean(randInt(2));
   }
   
+  function mod(value, modulus) {
+    return (value % modulus + modulus) % modulus;
+  }
+  
   // --- Export ---
 
   gltoy = def({
     EffectManager: EffectManager,
     fetchShaders: fetchShaders,
     GLWrapper: GLWrapper,
+    mod: mod,
     randBool: randBool,
     randElem: randElem,
     randInt: randInt,
