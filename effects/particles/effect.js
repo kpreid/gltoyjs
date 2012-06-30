@@ -2,22 +2,17 @@
 // in the accompanying file README.md or <http://opensource.org/licenses/MIT>.
 
 /* TODO: Add in all the features and characteristics from the original GLToy version:
-  * Particle emitter.
-
   * Per-particle colors.
   
   * Line shape.
   * Rotating triangle shape.
   * Use triangles instead of points so as to not have the clipping problem.
   
-  * Initial conditions of "gravity" motion.
-  * "Warp" motion.
-  * "Spray" motion.
-  * Take a look at the "fountain" motion.
+  * Take a look at the incomplete "fountain" motion.
   
   * Whatever the HSV thing is.
   
-  * Near/far camera.
+  * Close/far camera.
   * Speed modifier.
   
   * Fog for far clip.
@@ -35,6 +30,10 @@
   var random = Math.random;
   var sin = Math.sin;
   
+  function sinrange(a, b, t) {
+    return a + (sin(t) + 1) / 2 * (b - a);
+  }
+  
   var numStateComponents = 2;
   
   exports.shaders = {
@@ -45,9 +44,60 @@
   exports.configure = function () {
     var parameters = {
       numParticles: 10000,
-      shape: randElem(["square", "soft"])
+      shape: randElem(["square", "soft"]),
+      motion: randElem(["harmonic", "warp", "spray"])
     };
     return parameters;
+  };
+  
+  function makeSprayEmitter(frame, state) {
+    var speed = sinrange(0.0, 0.4, frame.t);
+    var ex = sin(frame.t / 5);
+    var ey = sin(frame.t / 7);
+    var ez = sin(frame.t / 4);
+    return function () {
+      state[0] = ex;
+      state[1] = ey;
+      state[2] = ez;
+      state[3] = 1;
+      state[4] = (random() - 0.5) * speed * 2;
+      state[5] = (random() - 0.5) * speed * 2;
+      state[6] = (random() - 0.5) * speed * 2;
+      state[7] = 1;
+    };
+  }
+  
+  var motions = Object.create(null);
+  motions.harmonic = {
+    emitRate: 0.03,
+    emitter: makeSprayEmitter,
+    harmonicAccel: function (t) {
+      return sinrange(-0.2, -2, t * 0.1);
+    }
+  };
+  motions.spray = {
+    emitRate: 0.03,
+    emitter: makeSprayEmitter,
+    harmonicAccel: function (t) { return 0; }
+  };
+  motions.warp = {
+    // TODO near view mode
+    emitRate: 0.03,
+    emitter: function (frame, state) {
+      return function () {
+        state[0] = random() * 10 - 5;
+        state[1] = random() * 10 - 5;
+        state[2] = -2;
+        state[3] = 1;
+        state[4] = 0;
+        state[5] = 0;
+        state[6] = 0.3;
+        state[7] = 1;
+      };
+    },
+    harmonicAccel: function (t) {
+      return 0;
+    }
   };
   
   exports.Effect = function (parameters, glw, resources) {
@@ -61,6 +111,7 @@
     mat4.identity(modelMatrix);
     
     var shape = parameters.shape;
+    var motion = motions[parameters.motion];
     
     var numParticles = parameters.numParticles;
     var stateTexSize = 1;
@@ -69,6 +120,13 @@
     }
     if (typeof console !== "undefined") {
       console.log("Texture size: " + stateTexSize + "×" + stateTexSize + "=" + stateTexSize*stateTexSize + " vec4s (needed " + numStateComponents * numParticles + ")");
+    }
+    
+    function particleTexSpix(i) {
+      return ((i * numStateComponents) % stateTexSize);
+    }
+    function particleTexTpix(i) {
+      return floor((i * numStateComponents)/stateTexSize);
     }
     
     var plotProgramW = glw.compile({
@@ -122,9 +180,8 @@
     // Generate buffers
     var array = new Float32Array(numParticles * 2);
     for (var i = 0; i < numParticles; i++) {
-      var index = i*numStateComponents;
-      array[i*2] = (index % stateTexSize) / stateTexSize;
-      array[i*2+1] = floor(index/stateTexSize) / stateTexSize;
+      array[i*2+0] = particleTexSpix(i) / stateTexSize;
+      array[i*2+1] = particleTexTpix(i) / stateTexSize;
     }
     var indexes = new glw.BufferAndArray([{
       attrib: plotProgramW.attribs.aTexCoord,
@@ -154,11 +211,25 @@
     // Framebuffer for updates
     var framebuffer = gl.createFramebuffer();
     
-    var oneStep = 0;
+    var nextEmit = 0;
+    var emitStateBuf = new Float32Array(numStateComponents * 4);
     
     this.step = function (frame) {
       gl.disable(gl.BLEND);
       
+      // Emit particles
+      (function () {
+        var emitCount = motion.emitRate * frame.dt * numParticles;
+        var emitter = motion.emitter(frame, emitStateBuf);
+        for (var ep = 0; ep < emitCount; ep++) {
+          emitter();
+          gl.bindTexture(gl.TEXTURE_2D, stateTexture);
+          gl.texSubImage2D(gl.TEXTURE_2D, 0, particleTexSpix(nextEmit), particleTexTpix(nextEmit), numStateComponents, 1, gl.RGBA, gl.FLOAT, emitStateBuf);
+          nextEmit = (nextEmit + 1) % numParticles;
+        }
+      }());
+      
+      // Perform step
       gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, nextStateTexture, 0);
       // console.log(WebGLDebugUtils.glEnumToString(gl.checkFramebufferStatus(gl.FRAMEBUFFER)));
@@ -173,6 +244,7 @@
         gl.uniform1i(glw.uniforms.uState, 0);
 
         gl.uniform1f(glw.uniforms.uDT, frame.dt);
+        gl.uniform1f(glw.uniforms.uHarmonicAccel, motion.harmonicAccel(frame.t));
         
         quad.attrib();
         quad.draw(gl.TRIANGLE_STRIP);

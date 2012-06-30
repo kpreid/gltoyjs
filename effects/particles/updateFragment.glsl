@@ -5,6 +5,7 @@ precision highp float;
 uniform sampler2D uState;
 uniform float uResolution;
 uniform float uDT;
+uniform float uHarmonicAccel;
 
 vec4 lookup(float offset) {
   return texture2D(uState, (gl_FragCoord.xy + vec2(offset, 0.0)) / uResolution);
@@ -22,7 +23,7 @@ void main(void) {
   }
   
   // velocity update is applied to position as well
-  vel += -1.0 * uDT * normalize(pos);
+  vel += uHarmonicAccel * uDT * normalize(pos);
   
   if (updatingPosition) {
     gl_FragColor = vec4(pos + uDT * vel, 1.0);
