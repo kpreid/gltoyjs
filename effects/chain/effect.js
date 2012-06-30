@@ -2,7 +2,6 @@
 // in the accompanying file README.md or <http://opensource.org/licenses/MIT>.
 
 /* TODO: Add in all the features and characteristics from the original GLToy version:
-  * Drawing types.
   * Disable lighting.
   * Backface culling.
   * Wandering off the origin.
@@ -44,6 +43,7 @@
       length: 10 + randInt(1000),
       motion: randElem(["sine", "bend", "curl"]),
       motionPar: {},
+      shape: randElem(["diamond", "line", "triangle", "sphere"]),
       coloring: randElem(["q", "r"/*, "θ"*/]),
       scale: 0.005 + 0.1 * random(),
       copies: 1 + randInt(6)
@@ -81,35 +81,76 @@
     var chainMatrix = mat4.create();
     var motion = new motions[parameters.motion](chainMatrix, chainLength, parameters.motionPar);
     
-    var coneVertices = 4;
-    var coneRadius = 1;
-    var coneSlope = 2;
-    
-    var programW = glw.compile(programDesc, resources, {
-      LIGHTING: true
-    });
+    var sphereLats = 5;
+    var sphereLons = 6;
     
     var nh = 1;
     var nz = 1;
-    var cverts = [];
+    var shapeVertices = [];
+    var shapePrimitive;
+    var shapeCanBeLit;
     for (var copy = 0; copy < copies; copy++) {
       var ang = copy * (TWOPI/copies);
-      for (var i = 0; i <= coneVertices; i += 1) {
-        var j = i * TWOPI / coneVertices;
-        var jn = (i+1) * TWOPI / coneVertices;
-        var s = sin(j);
-        var c = cos(j);
-        var sn = sin(jn);
-        var cn = cos(jn);
-        cverts.push(
-          coneRadius * s, coneRadius * c, -coneRadius / coneSlope, nh * s, nh * c, nz, ang,
-          0, 0, 0, nh * s, nh * c, nz, ang,
-          coneRadius * sn, coneRadius * cn, -coneRadius / coneSlope, nh * sn, nh * cn, nz, ang
-          //0, 0, 0, nh * sn, nh * cn, nz, ang
-        );
+      switch (parameters.shape) {
+        case "diamond":
+          shapePrimitive = gl.TRIANGLES;
+          shapeCanBeLit = true;
+          shapeVertices.push(
+             0, 2, 0, 0, 0, 1, ang,
+            -1, 1, 0, 0, 0, 1, ang,
+             1, 1, 0, 0, 0, 1, ang,
+             1, 1, 0, 0, 0, 1, ang,
+            -1, 1, 0, 0, 0, 1, ang,
+             0, 0, 0, 0, 0, 1, ang
+          );
+          break;
+        case "line":
+          shapePrimitive = gl.LINES;
+          shapeCanBeLit = false;
+          shapeVertices.push(
+             0, 0, 0, 0, 0, 1, ang,
+             0, 2, 0, 0, 0, 1, ang
+          );
+          break;
+        case "triangle":
+          shapePrimitive = gl.TRIANGLES;
+          shapeCanBeLit = true;
+          shapeVertices.push(
+             0, 2, 0, 0, 0, 1, ang,
+            -1, 0, 0, 0, 0, 1, ang,
+             1, 0, 0, 0, 0, 1, ang
+          );
+          break;
+        default: (function () {
+          shapePrimitive = gl.TRIANGLES;
+          shapeCanBeLit = true;
+          function spherePoint(i, j) {
+            var lat = i / sphereLats * PI;
+            var lon = (j % sphereLons) / sphereLons * TWOPI;
+            shapeVertices.push(
+              sin(lon) * sin(lat),
+              cos(lon) * sin(lat),
+              cos(lat));
+          }
+          for (var i = 0; i <= sphereLats; i++) {
+            for (var j = 0; j <= sphereLons; j++) {
+              spherePoint(i,   j  ); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
+              spherePoint(i+1, j  ); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
+              spherePoint(i,   j+1); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
+              spherePoint(i,   j+1); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
+              spherePoint(i+1, j  ); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
+              spherePoint(i+1, j+1); spherePoint(i+0.5, j+0.5); shapeVertices.push(ang);
+            }
+          }
+        })(); break;
       }
     }
-    var cone = new glw.BufferAndArray([
+    
+    var programW = glw.compile(programDesc, resources, {
+      LIGHTING: shapeCanBeLit
+    });
+    
+    var shape = new glw.BufferAndArray([
       {
         attrib: programW.attribs.aPosition,
         components: 3
@@ -123,8 +164,8 @@
         components: 1
       }
     ]);
-    cone.load(cverts);
-    cone.send(gl.STATIC_DRAW);
+    shape.load(shapeVertices);
+    shape.send(gl.STATIC_DRAW);
 
     this.setState = function () {
       // mat4.ortho(-1.5, 1.5, -1.5, 1.5, 0.01, 100.0, pMatrix); // TODO
@@ -173,14 +214,14 @@
         mat4.translate(chainMatrix, translation);
         motion.apply(t, i);
         
-        cone.attrib();
-        cone.draw(gl.TRIANGLES);
+        shape.attrib();
+        shape.draw(shapePrimitive);
       }
     };
     
     this.deleteResources = function () {
       programW.deleteResources();
-      cone.deleteResources();
+      shape.deleteResources();
     }
   }
   exports.Effect.prototype.viewDistance = function () { return 6; };
