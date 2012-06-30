@@ -28,7 +28,8 @@
     var parameters = {
       tumbler: gltoy.Tumbler.configure(),
       length: 50,
-      scale: 0.05
+      scale: 0.05,
+      copies: 1 + randInt(6)
     };
     parameters.tumbler = { type: "rotY" };
     return parameters;
@@ -41,6 +42,7 @@
     var tumbler = new gltoy.Tumbler(parameters.tumbler);
     
     var chainLength = parameters.length;
+    var copies = parameters.copies;
     
     var coneVertices = 4;
     var coneRadius = 1;
@@ -53,7 +55,8 @@
     var nh = 1;
     var nz = 1;
     var cverts = [];
-    for (var ang = 0; ang < TWOPI; ang += TWOPI/5) {
+    for (var copy = 0; copy < copies; copy++) {
+      var ang = copy * (TWOPI/copies);
       for (var i = 0; i <= coneVertices; i += 1) {
         var j = i * TWOPI / coneVertices;
         var jn = (i+1) * TWOPI / coneVertices;
