@@ -9,10 +9,13 @@ uniform float uPointSize;
 varying vec3 vColor;
 
 void main(void) {
-  gl_Position = uPMatrix * uMVMatrix * vec4(
+  vec4 eyePosition = uMVMatrix * vec4(
     texture2D(uState, aTexCoord).xyz,
     1.0
   );
-  gl_PointSize = uPointSize;
+  gl_Position = uPMatrix * eyePosition;
   vColor = vec3(0.5) + 0.5 * abs(texture2D(uState, aTexCoord + vec2(1.0/uResolution, 0.0)).rgb);
+  
+  vec4 projSize = uPMatrix * vec4(uPointSize, 0.0, eyePosition.zw);
+  gl_PointSize = projSize.x / projSize.w;
 }

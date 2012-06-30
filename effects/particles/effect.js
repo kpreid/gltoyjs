@@ -2,7 +2,25 @@
 // in the accompanying file README.md or <http://opensource.org/licenses/MIT>.
 
 /* TODO: Add in all the features and characteristics from the original GLToy version:
-  * ...
+  * Particle emitter.
+
+  * Per-particle colors.
+  
+  * Line shape.
+  * Rotating triangle shape.
+  * Use triangles instead of points so as to not have the clipping problem.
+  
+  * Initial conditions of "gravity" motion.
+  * "Warp" motion.
+  * "Spray" motion.
+  * Take a look at the "fountain" motion.
+  
+  * Whatever the HSV thing is.
+  
+  * Near/far camera.
+  * Speed modifier.
+  
+  * Fog for far clip.
 */
 
 (function () {
@@ -26,7 +44,8 @@
   
   exports.configure = function () {
     var parameters = {
-      numParticles: 10000
+      numParticles: 10000,
+      shape: randElem(["square", "soft"])
     };
     return parameters;
   };
@@ -41,6 +60,8 @@
     var modelMatrix = mat4.create();
     mat4.identity(modelMatrix);
     
+    var shape = parameters.shape;
+    
     var numParticles = parameters.numParticles;
     var stateTexSize = 1;
     while (stateTexSize * stateTexSize < numParticles * numStateComponents) {
@@ -53,10 +74,12 @@
     var plotProgramW = glw.compile({
       vertex: ["plotVertex.glsl"],
       fragment: ["plotFragment.glsl"]
-    }, resources, {});
+    }, resources, {
+      SHAPE_SOFT: shape === "soft"
+    });
     glw.useProgramW(plotProgramW);
     gl.uniform1f(glw.uniforms.uResolution, stateTexSize);
-    gl.uniform1f(glw.uniforms.uPointSize, 2);
+    gl.uniform1f(glw.uniforms.uPointSize, shape === "soft" ? 20 : 10);
     
     var updateProgramW = glw.compile({
       vertex: ["updateVertex.glsl"],
@@ -187,8 +210,8 @@
       indexes.deleteResources();
     }
   }
-  exports.Effect.prototype.viewDistance = function () { return 20; };
-  exports.Effect.prototype.viewRadius = function () { return 1; }; // TODO this should be able to be 1; view calculation must be wrong
-  exports.Effect.prototype.nearClipFraction = function () { return 0.1; };
+  exports.Effect.prototype.viewDistance = function () { return 4; };
+  exports.Effect.prototype.viewRadius = function () { return 1; };
+  exports.Effect.prototype.nearClipFraction = function () { return 0.0001; };
   exports.Effect.prototype.farClipDistance = function () { return 10000; };
 }());
