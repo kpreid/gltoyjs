@@ -632,6 +632,7 @@ var gltoy, glw;
     
     function resetStateFor(effectS, trf, mix) {
       glw.setTransition(interpView(), trf, mix); // clear transition matrix
+      gl.activeTexture(gl.TEXTURE0);
       gl.disable(gl.DEPTH_TEST);
       gl.disable(gl.CULL_FACE);
       gl.disable(gl.BLEND);
@@ -671,6 +672,10 @@ var gltoy, glw;
     function stepS(effectS, dt) {
       effectS.frame.t += dt;
       effectS.frame.dt = dt;
+      if (effectS.effect.step && dt > 0) { // TODO reconsider this condition
+        resetStateFor(effectS, noop, 1);
+        effectS.effect.step(effectS.frame);
+      }
     }
     
     function step() {
