@@ -29,10 +29,28 @@
   var randInt = gltoy.randInt;
   var random = Math.random;
   var sin = Math.sin;
+  var sqrt = Math.sqrt;
   
   function sinrange(a, b, t) {
     return a + (sin(t) + 1) / 2 * (b - a);
   }
+  
+  function pickDirection(dir) {
+    var magsqr, j;
+    var dims = dir.length;
+
+    do {
+      magsqr = 0;
+      for (j = 0; j < dims; j++) {
+        dir[j] = random() * 2 - 1;
+        magsqr += dir[j] * dir[j];
+      }
+    } while (magsqr > 1 || magsqr < 0.001);
+
+    var mag = sqrt(magsqr);
+    for (j = 0; j < dims; j++) dir[j] = dir[j] / mag;
+  }
+  
   
   var numStateComponents = 2;
   
@@ -50,7 +68,7 @@
     return parameters;
   };
   
-  function makeSprayEmitter(frame, state) {
+  function makeSprayEmitter(state, frame) {
     var speed = sinrange(0.0, 0.4, frame.t);
     var ex = sin(frame.t / 5);
     var ey = sin(frame.t / 7);
@@ -66,9 +84,27 @@
       state[7] = 1;
     };
   }
+  function makeSprayInitializer(state) {
+    var dirbuf = vec3.create();
+    return function (base) {
+      var vary = random();
+      // TODO initial speed factor
+      var speed = vary * 3 + 1;
+      pickDirection(dirbuf);
+      state[base + 0] = 0;
+      state[base + 1] = 0;
+      state[base + 2] = 0;
+      state[base + 3] = 1;
+      state[base + 4] = dirbuf[0] * speed;
+      state[base + 5] = dirbuf[1] * speed;
+      state[base + 6] = dirbuf[2] * speed;
+      state[base + 7] = 1;
+    };
+  }
   
   var motions = Object.create(null);
   motions.harmonic = {
+    initializer: makeSprayInitializer,
     emitRate: 0.03,
     emitter: makeSprayEmitter,
     harmonicAccel: function (t) {
@@ -76,14 +112,16 @@
     }
   };
   motions.spray = {
-    emitRate: 0.03,
+    initializer: makeSprayInitializer,
+    emitRate: 0.015,
     emitter: makeSprayEmitter,
     harmonicAccel: function (t) { return 0; }
   };
   motions.warp = {
     // TODO near view mode
+    initializer: makeSprayInitializer,
     emitRate: 0.03,
-    emitter: function (frame, state) {
+    emitter: function (state, frame) {
       return function () {
         state[0] = random() * 10 - 5;
         state[1] = random() * 10 - 5;
@@ -159,20 +197,22 @@
       return texture;
     }
     var initialStateArray = new Float32Array(stateTexSize * stateTexSize * 4);
+    var initializer = motion.initializer(initialStateArray);
     for (var i = 0; i < numParticles; i++) {
       var base = i*4*numStateComponents;
-      // position
-      //initialStateArray[base+0] = 3 * (i / (numParticles-1) - 0.5);
-      //initialStateArray[base+1] = 1.5 * ((i % Math.sqrt(numParticles)) / Math.sqrt(numParticles) - 0.5);
-      initialStateArray[base+1] = sin(i);
-      initialStateArray[base+2] = cos(i);
-      initialStateArray[base+0] = 3 * (i/numParticles - 0.5);
-      initialStateArray[base+3] = 1;
-      // velocity
-      initialStateArray[base+5] = 1.0 * cos(i);
-      initialStateArray[base+6] = 1.0 * -sin(i);
-      initialStateArray[base+4] = 0;
-      initialStateArray[base+7] = 1;
+      initializer(base);
+      //// position
+      ////initialStateArray[base+0] = 3 * (i / (numParticles-1) - 0.5);
+      ////initialStateArray[base+1] = 1.5 * ((i % Math.sqrt(numParticles)) / Math.sqrt(numParticles) - 0.5);
+      //initialStateArray[base+1] = sin(i);
+      //initialStateArray[base+2] = cos(i);
+      //initialStateArray[base+0] = 3 * (i/numParticles - 0.5);
+      //initialStateArray[base+3] = 1;
+      //// velocity
+      //initialStateArray[base+5] = 1.0 * cos(i);
+      //initialStateArray[base+6] = 1.0 * -sin(i);
+      //initialStateArray[base+4] = 0;
+      //initialStateArray[base+7] = 1;
     }
     var stateTexture = makeTexture(initialStateArray);
     var nextStateTexture = makeTexture(null);
@@ -220,7 +260,7 @@
       // Emit particles
       (function () {
         var emitCount = motion.emitRate * frame.dt * numParticles;
-        var emitter = motion.emitter(frame, emitStateBuf);
+        var emitter = motion.emitter(emitStateBuf, frame);
         for (var ep = 0; ep < emitCount; ep++) {
           emitter();
           gl.bindTexture(gl.TEXTURE_2D, stateTexture);
