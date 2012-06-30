@@ -1,7 +1,15 @@
 // Copyright 2011-2012 Kevin Reid under the terms of the MIT License as detailed
 // in the accompanying file README.md or <http://opensource.org/licenses/MIT>.
 
-// TODO: Add in all the features and characteristics from the original GLToy version.
+/* TODO: Add in all the features and characteristics from the original GLToy version:
+  * Drawing types.
+  * Disable lighting.
+  * Backface culling.
+  * Wandering off the origin.
+  * Color schemes.
+  * Disable depth test for planar conditions.
+  * Blending.
+*/
 
 (function () {
   "use strict";
@@ -32,10 +40,10 @@
   exports.configure = function () {
     var parameters = {
       tumbler: gltoy.Tumbler.configure(),
-      length: 50,
+      length: 10 + randInt(1000),
       motion: randElem(["sine", "bend", "curl"]),
       motionPar: {},
-      scale: 0.05,
+      scale: 0.005 + 0.1 * random(),
       copies: 1 + randInt(6)
     };
     switch (parameters.motion) {
