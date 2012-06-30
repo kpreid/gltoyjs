@@ -16,6 +16,8 @@
   var sin = Math.sin;
   
   var TWOPI = PI * 2;
+  var HALFPI = PI / 2;
+  var QUARTERPI = PI / 4;
   
   var programDesc = {
     vertex: ["vertex.glsl"],
@@ -29,11 +31,22 @@
       tumbler: gltoy.Tumbler.configure(),
       length: 50,
       motion: randElem(["sine", "bend", "curl"]),
+      motionPar: {},
       scale: 0.05,
       copies: 1 + randInt(6)
     };
-    parameters.motion = "curl";
+    parameters.motion = "sine";
     parameters.tumbler = { type: "rotY" };
+    switch (parameters.motion) {
+      case "sine":
+        if (randBool()) parameters.motionPar.rotX = true;
+        if (randBool()) parameters.motionPar.rotY = true;
+        if (randBool()) parameters.motionPar.rotZ = true;
+        if (randBool()) parameters.motionPar.transX = true;
+        if (randBool()) parameters.motionPar.transY = true;
+        if (randBool()) parameters.motionPar.transZ = true;
+        break;
+    }
     return parameters;
   };
   
@@ -46,7 +59,7 @@
     var copies = parameters.copies;
 
     var chainMatrix = mat4.create();
-    var motion = new motions[parameters.motion](chainMatrix, chainLength);
+    var motion = new motions[parameters.motion](chainMatrix, chainLength, parameters.motionPar);
     
     var coneVertices = 4;
     var coneRadius = 1;
@@ -133,9 +146,39 @@
   exports.Effect.prototype.farClipDistance = function () { return 2; };
   
   var motions = Object.create(null);
+  motions.sine = SineMotion;
+  motions.bend = BendMotion;
   motions.curl = CurlMotion;
   
-  function CurlMotion(matrix, chainLength) {
+  function SineMotion(matrix, chainLength, parameters) {
+    var rotX   = parameters.rotX;
+    var rotY   = parameters.rotY;
+    var rotZ   = parameters.rotZ;
+    var transX = parameters.transX;
+    var transY = parameters.transY;
+    var transZ = parameters.transZ;
+    
+    this.apply = function (t, i) {
+      var p = t / 4;
+      if (transX) mat4.translate(matrix, [sin(p / 5.5 + i * 23), 0, 0]);
+      if (transY) mat4.translate(matrix, [0, sin(p / 6.5 + i * 33), 0]);
+      if (transZ) mat4.translate(matrix, [0, 0, sin(p / 9.5 + i * 43)]);
+      if (rotX) mat4.rotateX(matrix, sin(p / 5.0 + i*i * 0.2) * HALFPI);
+      if (rotY) mat4.rotateY(matrix, sin(p / 6.0 + i*i * 0.3) * HALFPI);
+      if (rotZ) mat4.rotateZ(matrix, sin(p / 9.0 + i*i * 0.4) * HALFPI);
+      if (rotX) mat4.rotateX(matrix, sin(p / 1.0 + i*i * 23 ) * QUARTERPI);
+      if (rotY) mat4.rotateY(matrix, sin(p / 1.2 + i*i * 24 ) * QUARTERPI);
+      if (rotZ) mat4.rotateZ(matrix, sin(p / 1.4 + i*i * 25 ) * QUARTERPI);
+    };
+  }
+  
+  function BendMotion(matrix, chainLength, parameters) {
+    this.apply = function (t, i) {
+      // TODO
+    };
+  }
+  
+  function CurlMotion(matrix, chainLength, parameters) {
     var numWhorls = 1; // TODO parameterize
     var rippleSpeed = 1;
     var skew = 0;
