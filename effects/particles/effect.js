@@ -2,15 +2,11 @@
 // in the accompanying file README.md or <http://opensource.org/licenses/MIT>.
 
 /* TODO: Add in all the features and characteristics from the original GLToy version:
-  * Per-particle colors.
-  
   * Line shape.
   * Rotating triangle shape.
   * Use triangles instead of points so as to not have the clipping problem.
   
   * Take a look at the incomplete "fountain" motion.
-  
-  * Whatever the HSV thing is.
   
   * Close/far camera.
   * Speed modifier.
@@ -21,6 +17,7 @@
 (function () {
   "use strict";
   
+  var atan2 = Math.atan2;
   var cos = Math.cos;
   var floor = Math.floor;
   var PI = Math.PI;
@@ -74,13 +71,16 @@
     var ey = sin(frame.t / 7);
     var ez = sin(frame.t / 4);
     return function () {
+      // position
       state[0] = ex;
       state[1] = ey;
       state[2] = ez;
-      state[3] = 1;
+      // velocity
       state[4] = (random() - 0.5) * speed * 2;
       state[5] = (random() - 0.5) * speed * 2;
       state[6] = (random() - 0.5) * speed * 2;
+      // HS[V=1] color
+      state[3] = atan2(state[0], state[1]);
       state[7] = 1;
     };
   }
@@ -91,13 +91,16 @@
       // TODO initial speed factor
       var speed = vary * 3 + 1;
       pickDirection(dirbuf);
+      // position
       state[base + 0] = 0;
       state[base + 1] = 0;
       state[base + 2] = 0;
-      state[base + 3] = 1;
+      // velocity
       state[base + 4] = dirbuf[0] * speed;
       state[base + 5] = dirbuf[1] * speed;
       state[base + 6] = dirbuf[2] * speed;
+      // HS[V=1] color
+      state[base + 3] = vary;
       state[base + 7] = 1;
     };
   }
@@ -123,13 +126,16 @@
     emitRate: 0.03,
     emitter: function (state, frame) {
       return function () {
+        // position
         state[0] = random() * 10 - 5;
         state[1] = random() * 10 - 5;
         state[2] = -2;
-        state[3] = 1;
+        // velocity
         state[4] = 0;
         state[5] = 0;
         state[6] = 0.3;
+        // HS[V=1] color
+        state[3] = frame.t * 0.005;
         state[7] = 1;
       };
     },
@@ -175,7 +181,7 @@
     });
     glw.useProgramW(plotProgramW);
     gl.uniform1f(glw.uniforms.uResolution, stateTexSize);
-    gl.uniform1f(glw.uniforms.uPointSize, shape === "soft" ? 20 : 10);
+    gl.uniform1f(glw.uniforms.uPointSize, shape === "soft" ? 20 : 5);
     
     var updateProgramW = glw.compile({
       vertex: ["updateVertex.glsl"],
