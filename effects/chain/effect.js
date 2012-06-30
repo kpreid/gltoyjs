@@ -161,10 +161,10 @@
       cone.deleteResources();
     }
   }
-  exports.Effect.prototype.viewDistance = function () { return 20; };
+  exports.Effect.prototype.viewDistance = function () { return 6; };
   exports.Effect.prototype.viewRadius = function () { return 1; };
-  exports.Effect.prototype.nearClipFraction = function () { return 0.9; };
-  exports.Effect.prototype.farClipDistance = function () { return 2; };
+  exports.Effect.prototype.nearClipFraction = function () { return .01; };
+  exports.Effect.prototype.farClipDistance = function () { return 400; };
   
   var motions = Object.create(null);
   motions.sine = SineMotion;
