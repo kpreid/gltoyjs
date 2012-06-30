@@ -120,7 +120,6 @@
     cone.send(gl.STATIC_DRAW);
 
     this.setState = function () {
-      // mat4.ortho(-1.5, 1.5, -1.5, 1.5, 0.01, 100.0, pMatrix); // TODO
       glw.useProgramW(programW);
       gl.enable(gl.DEPTH_TEST);
     };
@@ -178,6 +177,7 @@
       cone.deleteResources();
     }
   }
+  // TODO: request orthogonal projection
   exports.Effect.prototype.viewDistance = function () { return 20; };
   exports.Effect.prototype.viewRadius = function () { return 1; };
   exports.Effect.prototype.nearClipFraction = function () { return 0.9; };
