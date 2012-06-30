@@ -9,8 +9,6 @@
   * Take a look at the incomplete "fountain" motion.
   
   * Speed modifier.
-  
-  * Fog for far clip.
 */
 
 (function () {
@@ -128,13 +126,13 @@
   motions.warp = {
     mustBeNear: true,
     initializer: makeSprayInitializer,
-    emitRate: 0.03,
+    emitRate: 0.1,
     emitter: function (state, frame) {
       return function () {
         // position
         state[0] = random() * 10 - 5;
         state[1] = random() * 10 - 5;
-        state[2] = -2;
+        state[2] = -1;
         // velocity
         state[4] = 0;
         state[5] = 0;
@@ -163,6 +161,9 @@
     var motion = motions[parameters.motion];
     var nearView = parameters.nearView;
     
+    this.viewDistance = function () { return nearView ? 0.1 : 3; };
+    this.viewRadius = function () { return nearView ? 0.4 : 1; };
+    
     var numParticles = parameters.numParticles;
     var stateTexSize = 1;
     while (stateTexSize * stateTexSize < numParticles * numStateComponents) {
@@ -188,6 +189,8 @@
     glw.useProgramW(plotProgramW);
     gl.uniform1f(glw.uniforms.uResolution, stateTexSize);
     gl.uniform1f(glw.uniforms.uPointSize, shape === "soft" ? 20 : 5);
+    gl.uniform1f(glw.uniforms.uFogStart, nearView ? 0 : this.viewDistance());
+    gl.uniform1f(glw.uniforms.uFogEnd, nearView ? 1 : this.viewDistance() + 2);
     
     var updateProgramW = glw.compile({
       vertex: ["updateVertex.glsl"],
@@ -333,10 +336,6 @@
       plotProgramW.deleteResources();
       indexes.deleteResources();
     };
-    
-    this.viewDistance = function () { return nearView ? 0.1 : 3; };
-    this.viewRadius = function () { return nearView ? 0.4 : 1; };
-    
   }
   exports.Effect.prototype.nearClipFraction = function () { return 0.0001; };
   exports.Effect.prototype.farClipDistance = function () { return 10000; };

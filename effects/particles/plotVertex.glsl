@@ -5,6 +5,8 @@ uniform mat4 uPMatrix;
 uniform sampler2D uState;
 uniform float uResolution;
 uniform float uPointSize;
+uniform float uFogStart;
+uniform float uFogEnd;
 
 varying vec3 vColor;
 
@@ -39,6 +41,10 @@ void main(void) {
   gl_Position = uPMatrix * eyePosition;
   vColor = convertHSVToRGB(vec3(hue, saturation, 1.0));
   
+  // Fog
+  vColor = mix(vColor, vec3(0.0), clamp((-eyePosition.z - uFogStart) / (uFogEnd - uFogStart), 0.0, 1.0));
+  
+  // Compute perspective point size
   vec4 projSize = uPMatrix * vec4(uPointSize, 0.0, eyePosition.zw);
   gl_PointSize = projSize.x / projSize.w;
 }
