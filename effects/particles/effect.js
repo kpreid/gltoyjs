@@ -8,7 +8,6 @@
   
   * Take a look at the incomplete "fountain" motion.
   
-  * Close/far camera.
   * Speed modifier.
   
   * Fog for far clip.
@@ -22,11 +21,14 @@
   var floor = Math.floor;
   var PI = Math.PI;
   var pow = Math.pow;
+  var randBool = gltoy.randBool;
   var randElem = gltoy.randElem;
   var randInt = gltoy.randInt;
   var random = Math.random;
   var sin = Math.sin;
   var sqrt = Math.sqrt;
+  
+  var TWOPI = PI * 2;
   
   function sinrange(a, b, t) {
     return a + (sin(t) + 1) / 2 * (b - a);
@@ -62,6 +64,7 @@
       shape: randElem(["square", "soft"]),
       motion: randElem(["harmonic", "warp", "spray"])
     };
+    parameters.nearView = motions[parameters.motion].mustBeNear || randBool();
     return parameters;
   };
   
@@ -80,7 +83,7 @@
       state[5] = (random() - 0.5) * speed * 2;
       state[6] = (random() - 0.5) * speed * 2;
       // HS[V=1] color
-      state[3] = atan2(state[0], state[1]);
+      state[3] = atan2(state[0], state[1]) / TWOPI;
       state[7] = 1;
     };
   }
@@ -107,6 +110,7 @@
   
   var motions = Object.create(null);
   motions.harmonic = {
+    mustBeNear: false,
     initializer: makeSprayInitializer,
     emitRate: 0.03,
     emitter: makeSprayEmitter,
@@ -115,13 +119,14 @@
     }
   };
   motions.spray = {
+    mustBeNear: false,
     initializer: makeSprayInitializer,
     emitRate: 0.015,
     emitter: makeSprayEmitter,
     harmonicAccel: function (t) { return 0; }
   };
   motions.warp = {
-    // TODO near view mode
+    mustBeNear: true,
     initializer: makeSprayInitializer,
     emitRate: 0.03,
     emitter: function (state, frame) {
@@ -156,6 +161,7 @@
     
     var shape = parameters.shape;
     var motion = motions[parameters.motion];
+    var nearView = parameters.nearView;
     
     var numParticles = parameters.numParticles;
     var stateTexSize = 1;
@@ -326,10 +332,12 @@
     this.deleteResources = function () {
       plotProgramW.deleteResources();
       indexes.deleteResources();
-    }
+    };
+    
+    this.viewDistance = function () { return nearView ? 0.1 : 3; };
+    this.viewRadius = function () { return nearView ? 0.4 : 1; };
+    
   }
-  exports.Effect.prototype.viewDistance = function () { return 4; };
-  exports.Effect.prototype.viewRadius = function () { return 1; };
   exports.Effect.prototype.nearClipFraction = function () { return 0.0001; };
   exports.Effect.prototype.farClipDistance = function () { return 10000; };
 }());
