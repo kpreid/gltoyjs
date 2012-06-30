@@ -4,7 +4,6 @@
 /* TODO: Add in all the features and characteristics from the original GLToy version:
   * Wandering off the origin.
   * Disable depth test for planar conditions.
-  * Blending.
 */
 
 (function () {
@@ -45,7 +44,8 @@
       scale: 0.005 + 0.1 * random(),
       copies: 1 + randInt(6),
       lighting: randBool(),
-      oneSided: randBool()
+      oneSided: randBool(),
+      blend: randBool()
     };
     switch (parameters.motion) {
       case "sine":
@@ -168,8 +168,15 @@
 
     this.setState = function () {
       glw.useProgramW(programW);
-      gl.enable(gl.DEPTH_TEST);
-      gl[parameters.oneSided || parameters.shape === "sphere" ? "enable" : "disable"](gl.CULL_FACE);
+      if (parameters.blend) {
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.ONE, gl.ONE)
+      } else {
+        gl.enable(gl.DEPTH_TEST);
+      }
+      if (parameters.oneSided || parameters.shape === "sphere") {
+        gl.enable(gl.CULL_FACE);
+      }
     };
     
     this.step = function (frame) {
