@@ -61,7 +61,7 @@
         break;
       case "curl":
         parameters.motionPar.whorls = randInt(50);
-        parameters.motionPar.speed = pow(2, -3 + random() * 5);
+        parameters.motionPar.speed = pow(2, -11 + random() * 5);
         parameters.motionPar.skew = randBool() ? 0 : random() * HALFPI;
         break;
     }
@@ -309,7 +309,7 @@
     
     this.apply = function (t, i) {
       mat4.rotateX(matrix,
-         (i / chainLength * TWOPI * numWhorls) + (t * rippleSpeed));
+         (i / chainLength * TWOPI * numWhorls) + (t * rippleSpeed * TWOPI));
       mat4.rotateZ(matrix, skew);
     };
   }
