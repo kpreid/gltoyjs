@@ -739,6 +739,7 @@ var gltoy, glw;
         resourceCache[name] = resources;
         var effectModule = effects[name];
         currentEffectS = {
+          name: name,
           effect: new effectModule.Effect(parameters, glw, resources),
           frame: {
             t: 0,
@@ -755,6 +756,9 @@ var gltoy, glw;
       } else {
         gltoy.fetchShaders("effects/"+name+"/", effects[name].shaders, finish);
       }
+      
+      effectManager.currentEffectName = name;
+      effectManager.currentEffectParameters = parameters;
     }
     
     function stepS(effectS, dt) {

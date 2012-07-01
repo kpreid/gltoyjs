@@ -73,15 +73,12 @@
     function gltoyMain() {
       "use strict";
       
-      var storagePrefix = "gltoy.";
-
       var stateDisplay = document.getElementById("stateDisplay");
       var canvas = document.getElementById("canvas");
       var effectMenu = document.getElementById("effectMenu");
       
       toy = new gltoy.EffectManager(canvas, effects);
-      var currentEffectName; // TODO should be EffectManager's problem
-      
+
       Object.keys(effects).forEach(function (name) {
         var item = document.createElement("option");
         item.value = name;
@@ -89,9 +86,9 @@
         effectMenu.appendChild(item);
       });
       
-      function switchEffect(name) {
-        currentEffectName = name;
-        var parameters = effects[name].configure();
+      function switchEffect(name, optParameters, push) {
+        //console.log("switchEffect", name, optParameters, push);
+        var parameters = optParameters || effects[name].configure();
         toy.switchEffect(name, parameters);
 
         var desc = " ";
@@ -157,23 +154,88 @@
         stateDisplay.textContent = desc;
         stateDisplay.insertBefore(effectMenu, stateDisplay.firstChild);
         effectMenu.value = name;
+        
+        setTimeout(function () { // isolate failure
+          var kvs = [["effect", name]];
+          Object.keys(parameters).forEach(function (pk) {
+            var value = parameters[pk];
+            if (typeof value == "string") {
+              kvs.push(["ps." + pk, parameters[pk]]);
+            } else {
+              kvs.push(["pj." + pk, JSON.stringify(parameters[pk])]);
+            }
+          });
+          window.history[push ? "pushState" : "replaceState"](undefined, name,
+            "#" + kvs.map(function (kv) {
+              return encodeURIComponent(kv[0]) + "=" + encodeURIComponent(kv[1]);
+            }).join("&"));
+        }, 0);
       }
       
       function randomEffect() {
         var names = Object.keys(effects);
-        switchEffect(names[Math.floor(Math.random() * names.length)]);
+        switchEffect(names[Math.floor(Math.random() * names.length)], null, true);
       }
       
       // --- ---
       
+      function readFragment() {
+        //console.group("readFragment");
+        var fragment = window.location.hash;
+        if (fragment[0] !== "#") return;
+        fragment = fragment.substring(1);
+
+        var effect = null;
+        var parameters = {};
+        fragment.split("&").forEach(function (fragkv) {
+          var kv = fragkv.split("=").map(decodeURIComponent);
+          if (kv.length !== 2) return;
+          var match;
+          if (kv[0] === "effect") {
+            effect = kv[1];
+          } else if (match = /^p([js])\.(.*)$/.exec(kv[0])) {
+            var valueKind = match[1];
+            var prop = match[2];
+            try {
+              var value;
+              switch (valueKind) {
+                case "j": value = JSON.parse(kv[1]); break;
+                case "s": value = kv[1]; break;
+              }
+              parameters[prop] = value;
+            } catch (e) {
+              if (typeof console !== "undefined")
+                console.warn("Bad ", kv[0], " in URL; ignoring. ", e);
+            }
+          } else {
+            if (typeof console !== "undefined")
+              console.warn("Ignoring URL parameter ", kv[0]);
+          }
+        });
+        
+        if (effect != null) {
+          if (!(effect === toy.currentEffectName &&
+                JSON.stringify(parameters) === JSON.stringify(toy.currentEffectParameters))) {
+            if (Object.keys(parameters).length === 0) parameters = null;
+            switchEffect(effect, parameters, false);
+          } else {
+            //console.log("skipping");
+          }
+          
+        }
+        //console.groupEnd();
+      }
+      
+      window.addEventListener("popstate", function (event) {
+        readFragment();
+      });
+      
       effectMenu.addEventListener("change", function (event) {
         setTimeout(function () { // in random case don't re-change synchronously
           if (effectMenu.value === "") {
-            localStorage.removeItem(storagePrefix + "effect");
             randomEffect();
           } else {
-            localStorage.setItem(storagePrefix + "effect", effectMenu.value);
-            switchEffect(effectMenu.value);
+            switchEffect(effectMenu.value, null, true);
           }
         }, 0);
       });
@@ -183,7 +245,7 @@
         switch (String.fromCharCode(event.keyCode)) {
           case " ": randomEffect(); break;
           case "R":
-            switchEffect(currentEffectName);
+            switchEffect(toy.currentEffectName, null, false);
             break;
           default:
             return true;
@@ -193,14 +255,13 @@
       
       document.getElementById("timerate").addEventListener("change", function (event) {
         toy.timeRate = event.target.value;
-      })
+      });
       
       // --- setup ---
       
-      var initName = localStorage.getItem(storagePrefix + "effect");
-      if (typeof initName === "string" && initName in effects) {
-        switchEffect(initName);
-      } else {
+      readFragment();
+      if (!toy.currentEffectName) {
+        //console.log("startup random");
         randomEffect();
       }
       
