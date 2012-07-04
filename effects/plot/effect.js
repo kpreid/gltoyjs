@@ -35,27 +35,29 @@
   
   function randfunc(param) {
     var funcText = randElem([
+      "p",
+      
       "s * 2.0 - 1.0",
       "s * -2.0 + 1.0",
-
+      
       "sin(s * PI * p * 48.0)",
       "cos(s * PI * p * 48.0)",
       "tan(s * PI * p * 48.0)",
       "sec(s * PI * p * 48.0)",
-
+      
       "sin(t)",
       "cos(t)",
       "tan(t)",
       "sec(t)",
-
+      
       "sin(s * PI * p * 48.0 + t)",
       "cos(s * PI * p * 48.0 + t)",
       "tan(s * PI * p * 48.0 + t)",
       "sec(s * PI * p * 48.0 + t)",
-
+      
       "sin(1.0 / (s - 0.5) * (p * 48.0))",
       "sin(1.0 / (s - 0.5) * (p * 48.0) + t)",
-
+      
       "sin(s * PI * p * 48.0) / 2.0 + sin(s * PI * 2.0)",
       "sin(s * PI * p * 48.0 + t) / 2.0 + sin(s * PI * 2.0)",
       "cos(s * PI * p * 48.0) / 2.0 + sin(s * PI * 2.0)",
