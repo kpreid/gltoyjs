@@ -24,8 +24,17 @@
   
   exports.shaders = programDesc;
   
-  function randfunc() {
-    return randElem([
+  var sparkVertices = [
+    [0, -1],
+    [0, +1],
+    [1, -1],
+    [0, +1],
+    [1, -1],
+    [1, +1]
+  ];
+  
+  function randfunc(param) {
+    var funcText = randElem([
       "s * 2.0 - 1.0",
       "s * -2.0 + 1.0",
 
@@ -57,9 +66,13 @@
       "abs(mod(s * p * 48.0, 4.0) - 2.0) - 1.0", // sawtooth
       "abs(mod(s * p * 48.0 + t, 4.0) - 2.0) - 1.0",
       
-      "tan(ess) + 2.0 * sin(-mod(ess + PI/2.0, PI) + PI/2.0)",
-      "tan(esst) + 2.0 * sin(-mod(esst + PI/2.0, PI) + PI/2.0)"
+      "tan(s * PI * p * 48.0) + 2.0 * sin(-mod(s * PI * p * 48.0 + PI/2.0, PI) + PI/2.0)",
+      "tan(s * PI * p * 48.0 + t) + 2.0 * sin(-mod(s * PI * p * 48.0 + t + PI/2.0, PI) + PI/2.0)"
     ]);
+    
+    funcText = funcText.replace(/\bp\b/g, param.toString());
+    
+    return funcText;
   }
   
   function pickParam(previous) {
@@ -72,36 +85,26 @@
     }
   }
   
-  var sparkVertices = [
-    [0, -1],
-    [0, +1],
-    [1, -1],
-    [0, +1],
-    [1, -1],
-    [1, +1]
-  ];
-  
   exports.configure = function () {
+    var px = pickParam();
+    var py = pickParam(px);
+    var pz = pickParam(py);
+    var pr = pickParam(pz);
+    var pg = pickParam(pr);
+    var pb = pickParam(pg);
+
     var parameters = {
       tumbler: gltoy.Tumbler.configure(),
       functions: {
-        x: randfunc(),
-        y: randfunc(),
-        z: randfunc(),
-        r: randfunc(),
-        g: randfunc(),
-        b: randfunc()
+        x: randfunc(px),
+        y: randfunc(py),
+        z: randfunc(pz),
+        r: randfunc(pr),
+        g: randfunc(pg),
+        b: randfunc(pb)
       },
-      funcParams: {},
       spark: Boolean(randInt(2))
     };
-    var p = parameters.funcParams;
-    p.x = pickParam();
-    p.y = pickParam(p.x);
-    p.z = pickParam(p.y);
-    p.r = pickParam(p.z);
-    p.g = pickParam(p.r);
-    p.b = pickParam(p.g);
     
     //parameters.spark = true;
     //parameters.tumbler = {type: "rotY"};
@@ -130,12 +133,6 @@
       FR: parameters.functions.r,
       FG: parameters.functions.g,
       FB: parameters.functions.b,
-      PX: parameters.funcParams.x,
-      PY: parameters.funcParams.y,
-      PZ: parameters.funcParams.z,
-      PR: parameters.funcParams.r,
-      PG: parameters.funcParams.g,
-      PB: parameters.funcParams.b,
       SPARK: false,
       SPARK_SPEED: parameters.sparkSpeed,
       SPARK_SCALE: parameters.sparkScale
