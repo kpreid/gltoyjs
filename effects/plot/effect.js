@@ -13,6 +13,7 @@
   
   var PI = Math.PI;
   var pow = Math.pow;
+  var randBool = gltoy.randBool;
   var randElem = gltoy.randElem;
   var randInt = gltoy.randInt;
   var random = Math.random;
@@ -94,7 +95,7 @@
     var pr = pickParam(pz);
     var pg = pickParam(pr);
     var pb = pickParam(pg);
-
+    
     var parameters = {
       tumbler: gltoy.Tumbler.configure(),
       functions: {
@@ -105,20 +106,13 @@
         g: randfunc(pg),
         b: randfunc(pb)
       },
-      spark: Boolean(randInt(2))
+      spark: randBool() ? {
+        length: pow(random() + 0.1, 3) * 0.01,
+        speed: random() * 0.1 - 0.05,
+        scale: 0.3 * random()
+      } : null
     };
     
-    //parameters.spark = true;
-    //parameters.tumbler = {type: "rotY"};
-    //parameters.functions.x = "sin(s*50.0)";
-    //parameters.functions.y = "cos(s*50.0)";
-    //parameters.functions.z = "s";
-    
-    if (parameters.spark) {
-      parameters.sparkSpeed = random() * 0.1 - 0.05;
-      parameters.sparkScale = 0.3 * random();
-      parameters.sparkLength = pow(random() + 0.1, 3) * 0.01;
-    }
     return parameters;
   };
   
@@ -136,12 +130,12 @@
       FG: parameters.functions.g,
       FB: parameters.functions.b,
       SPARK: false,
-      SPARK_SPEED: parameters.sparkSpeed,
-      SPARK_SCALE: parameters.sparkScale
     };
     var plotProgramW = glw.compile(programDesc, resources, pdefs);
     if (parameters.spark) {
       pdefs.SPARK = true;
+      pdefs.SPARK_SPEED = parameters.spark.speed,
+      pdefs.SPARK_SCALE = parameters.spark.scale
       var sparkProgramW = glw.compile(programDesc, resources, pdefs);
     }
 
@@ -161,9 +155,9 @@
     plot.send(gl.STATIC_DRAW);
 
     if (parameters.spark) {
-      var numSparkPoints = Math.max(2, Math.ceil(numPoints * parameters.sparkLength));
+      var numSparkPoints = Math.max(2, Math.ceil(numPoints * parameters.spark.length));
       array = new Float32Array(numSparkPoints * sparkVertices.length * 3);
-      var sparkIndexScale = 1 / (numSparkPoints - 2) * parameters.sparkLength;
+      var sparkIndexScale = 1 / (numSparkPoints - 2) * parameters.spark.length;
       var sparkCoordScale = 1 / numSparkPoints;
       var j = 0;
       for (var i = 0; i < numSparkPoints; i++) {
