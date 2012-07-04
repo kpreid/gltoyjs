@@ -121,7 +121,7 @@
                     desc += indent + "]";
                   }
                 }
-              } else {
+              } else if (o !== null) {
                 desc += "{";
                 var keys = Object.keys(o);
                 if (keys.length === 1) {
@@ -140,6 +140,8 @@
                 } else {
                   desc += "}";
                 }
+              } else {
+                desc += String(o);
               }
               break;
             case "number":
