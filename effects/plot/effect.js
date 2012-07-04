@@ -5,7 +5,6 @@
   * Draw as points instead of lines.
   * Draw with blending.
   * More frequently choose the no-tumble option.
-  * Cylindrical and spherical coordinate systems.
 */
 
 (function () {
@@ -89,23 +88,40 @@
   }
   
   exports.configure = function () {
-    var px = pickParam();
-    var py = pickParam(px);
-    var pz = pickParam(py);
-    var pr = pickParam(pz);
+    var p1 = pickParam();
+    var p2 = pickParam(p1);
+    var p3 = pickParam(p2);
+    var pr = pickParam(p3);
     var pg = pickParam(pr);
     var pb = pickParam(pg);
     
+    var functions = {
+      R: randfunc(pr),
+      G: randfunc(pg),
+      B: randfunc(pb)
+    }
+    
+    switch (randInt(3)) {
+      case 0: // cartesian
+        functions.x = randfunc(p1);
+        functions.y = randfunc(p2);
+        functions.z = randfunc(p3);
+        break;
+      case 1: // cylindrical
+        functions.r = randfunc(p1);
+        functions.θ = randfunc(p2);
+        functions.z = randfunc(p3);
+        break;
+      case 2: // spherical
+        functions.r = randfunc(p1);
+        functions.θ = randfunc(p2);
+        functions.φ = randfunc(p3);
+        break;
+    }
+    
     var parameters = {
       tumbler: gltoy.Tumbler.configure(),
-      functions: {
-        x: randfunc(px),
-        y: randfunc(py),
-        z: randfunc(pz),
-        r: randfunc(pr),
-        g: randfunc(pg),
-        b: randfunc(pb)
-      },
+      functions: functions,
       spark: randBool() ? {
         length: pow(random() + 0.1, 3) * 0.01,
         speed: random() * 0.1 - 0.05,
@@ -122,13 +138,20 @@
     
     var numPoints = 10000; //parameters.numPoints;
     
+    var fns = parameters.functions;
     var pdefs = {
-      FX: parameters.functions.x,
-      FY: parameters.functions.y,
-      FZ: parameters.functions.z,
-      FR: parameters.functions.r,
-      FG: parameters.functions.g,
-      FB: parameters.functions.b,
+      Fx: fns.x,
+      Fy: fns.y,
+      Fz: fns.z,
+      Fr: fns.r,
+      Ftheta: fns.θ,
+      Fphi: fns.φ,
+      FR: fns.R,
+      FG: fns.G,
+      FB: fns.B,
+      COORD_CARTESIAN: !!(fns.x && fns.y && fns.z),
+      COORD_CYLINDRICAL: !!(fns.r && fns.θ && fns.z),
+      COORD_SPHERICAL: !!(fns.r && fns.θ && fns.φ),
       SPARK: false,
     };
     var plotProgramW = glw.compile(programDesc, resources, pdefs);

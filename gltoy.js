@@ -59,6 +59,8 @@ var gltoy, glw;
       var value = declarations[prop];
       if (typeof value == "boolean") {
         value = value ? 1 : 0; // GLSL preprocessor doesn't do booleans
+      } else if (typeof value === "undefined") {
+        continue;
       }
       strings.push("#define ", prop, " (", value, ")\n");
     }

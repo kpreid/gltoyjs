@@ -20,9 +20,29 @@ float t = uTime;
 
 vec3 position(float s) {
   vec3 pos;
-  APPLY1(pos.x, FX)
-  APPLY1(pos.y, FY)
-  APPLY1(pos.z, FZ)
+#if COORD_CYLINDRICAL
+  float r, theta;
+  APPLY1(r, Fr)
+  APPLY1(theta, Ftheta)
+  APPLY1(pos.z, Fz)
+  theta *= PI;
+  pos.x = r * sin(theta);
+  pos.y = r * cos(theta);
+#elif COORD_SPHERICAL
+  float r, theta, phi;
+  APPLY1(r, Fr)
+  APPLY1(theta, Ftheta)
+  APPLY1(phi, Fphi)
+  theta *= PI;
+  phi *= PI;
+  pos.x = r * sin(theta) * cos(phi);
+  pos.y = r * cos(theta) * cos(phi);
+  pos.z = r * sin(phi);
+#elif COORD_CARTESIAN
+  APPLY1(pos.x, Fx)
+  APPLY1(pos.y, Fy)
+  APPLY1(pos.z, Fz)
+#endif
   return pos;
 }
 
